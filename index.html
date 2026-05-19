@@ -3303,6 +3303,7 @@ function openNewTrip() {
           emoji: emojiSel ? emojiSel.dataset.e : "🏖️",
           useTemplate: document.getElementById("nt-template").checked
         });
+        if (!trip) return;
         closeModal(); openTrip(trip.id);
       }}
     ]
