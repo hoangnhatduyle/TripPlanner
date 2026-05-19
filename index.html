@@ -186,6 +186,11 @@
 [data-auth="share-edit"] #app-root input[type="checkbox"] {
   opacity: 1;
 }
+/* Itinerary slot textareas must stay transparent so the filled-cell background shows */
+[data-auth="share-edit"] #app-root .itin-cell.slot textarea,
+[data-auth="locked"] #app-root .itin-cell.slot textarea {
+  background: transparent !important;
+}
 [data-auth="share-edit"] .share-edit-hidden { display: none !important; }
 [data-auth="share-edit"] .edit-action { display: none !important; }
 
