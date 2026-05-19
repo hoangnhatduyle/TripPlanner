@@ -7,6 +7,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Caveat:wght@500;700&display=swap" rel="stylesheet">
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#009eb0">
 <style>
 /* ===========================================================
    THEME TOKENS — switched via data-theme on <html>
@@ -134,6 +136,31 @@
 }
 
 /* ===========================================================
+   AUTH / VIEW-ONLY
+   =========================================================== */
+.view-only-banner {
+  background: var(--primary-soft);
+  border-bottom: 1px solid var(--line);
+  color: var(--primary-dark);
+  font-size: 13px; font-weight: 600;
+  text-align: center; padding: 7px 16px;
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+}
+.view-only-banner button {
+  background: var(--primary); color: white;
+  border: none; border-radius: 7px;
+  padding: 4px 12px; font-size: 12px; font-weight: 700;
+  cursor: pointer;
+}
+[data-auth="locked"] .edit-action { display: none !important; }
+[data-auth="locked"] input[readonly],
+[data-auth="locked"] input[readonly]:focus {
+  pointer-events: none;
+  background: transparent !important;
+  cursor: default;
+}
+
+/* ===========================================================
    BASE
    =========================================================== */
 * { box-sizing: border-box; }
@@ -195,6 +222,7 @@ input, textarea, select { font-family: inherit; }
 }
 .icon-btn:hover { background: var(--primary-soft); border-color: var(--line-strong); }
 .icon-btn svg { width: 18px; height: 18px; }
+.icon-btn.unlocked { background: var(--primary-soft); border-color: var(--primary); color: var(--primary); }
 
 /* ===========================================================
    APP LAYOUT
@@ -1244,12 +1272,18 @@ table.t tfoot td {
     <button class="icon-btn" title="Settings, themes, export/import" onclick="openSettings()">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
     </button>
-    <button class="btn primary" onclick="openNewTrip()" id="newtrip-nav-btn">
+    <button class="icon-btn" id="lock-btn" title="Sign in to edit" onclick="toggleAuth()">
+      <svg id="lock-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+    </button>
+    <button class="btn primary edit-action" onclick="openNewTrip()" id="newtrip-nav-btn">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
       New Trip
     </button>
   </div>
 </nav>
+<div id="view-only-banner" class="view-only-banner no-print" style="display:none;">
+  🔒 View only — <button onclick="toggleAuth()">Sign in to edit</button>
+</div>
 
 <main class="app" id="app-root"></main>
 <button class="fab no-print" onclick="openCalc()" title="Quick calculator">
@@ -1311,26 +1345,93 @@ const THEMES = [
   { id: "mono",    label: "Mono",    p1:"#2b2b2b", p2:"#777777", bg:"linear-gradient(135deg,#ececec,#f6f6f6,#e2e2e2)" }
 ];
 
-// -------- STATE / STORAGE --------
-const LS_KEY = "tripPlanner.v1";
-
-function loadState() {
+// -------- TIMEZONE --------
+const TIMEZONES = [
+  "Pacific/Honolulu","America/Anchorage","America/Los_Angeles","America/Denver",
+  "America/Chicago","America/New_York","America/Sao_Paulo","Atlantic/Reykjavik",
+  "Europe/London","Europe/Paris","Europe/Berlin","Europe/Helsinki","Europe/Moscow",
+  "Asia/Dubai","Asia/Kolkata","Asia/Bangkok","Asia/Singapore","Asia/Ho_Chi_Minh",
+  "Asia/Tokyo","Asia/Seoul","Asia/Shanghai","Australia/Sydney","Pacific/Auckland",
+];
+function getTimezoneOptions(selected) {
+  return TIMEZONES.map(tz =>
+    `<option value="${tz}" ${tz === selected ? "selected" : ""}>${tz.replace(/_/g," ")}</option>`
+  ).join("");
+}
+function tickTzClock() {
+  const el = document.getElementById("tz-clock");
+  if (!el) return;
+  const trip = currentTrip();
+  if (!trip?.timezone) return;
   try {
-    const raw = localStorage.getItem(LS_KEY);
-    if (!raw) return { trips: [], settings: { theme: "beach", currency: "USD" } };
-    const s = JSON.parse(raw);
+    el.textContent = new Intl.DateTimeFormat(undefined, {
+      timeZone: trip.timezone, hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false,
+    }).format(new Date());
+  } catch { el.textContent = "—"; }
+}
+let tzInterval = null;
+function startTzClock() {
+  stopTzClock();
+  tickTzClock();
+  tzInterval = setInterval(tickTzClock, 1000);
+}
+function stopTzClock() { if (tzInterval) { clearInterval(tzInterval); tzInterval = null; } }
+
+// -------- AUTH --------
+function getToken() { return sessionStorage.getItem("tp_token"); }
+function setToken(t) {
+  sessionStorage.setItem("tp_token", t);
+  document.documentElement.setAttribute("data-auth", "unlocked");
+  const btn = document.getElementById("lock-btn");
+  if (btn) { btn.title = "Sign out"; btn.classList.add("unlocked"); }
+  document.getElementById("lock-icon").innerHTML = '<rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/>';
+  const banner = document.getElementById("view-only-banner");
+  if (banner) banner.style.display = "none";
+}
+function clearToken() {
+  sessionStorage.removeItem("tp_token");
+  document.documentElement.setAttribute("data-auth", "locked");
+  const btn = document.getElementById("lock-btn");
+  if (btn) { btn.title = "Sign in to edit"; btn.classList.remove("unlocked"); }
+  document.getElementById("lock-icon").innerHTML = '<rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>';
+  const banner = document.getElementById("view-only-banner");
+  if (banner) banner.style.display = "";
+}
+function isEditing() { return !!getToken(); }
+function toggleAuth() {
+  if (isEditing()) { if (confirm("Sign out?")) { clearToken(); render(); } }
+  else openPasswordModal();
+}
+function applyAuthState() {
+  if (isEditing()) setToken(getToken()); else clearToken();
+}
+
+// -------- STATE / STORAGE --------
+const DEFAULT_STATE = () => ({ trips: [], settings: { theme: "beach", currency: "USD" } });
+
+async function loadState() {
+  try {
+    const res = await fetch("/api/data");
+    if (!res.ok) throw new Error("fetch failed");
+    const s = await res.json();
     s.trips = s.trips || [];
     s.settings = Object.assign({ theme: "beach", currency: "USD" }, s.settings || {});
     return s;
-  } catch (e) {
-    return { trips: [], settings: { theme: "beach", currency: "USD" } };
+  } catch {
+    return DEFAULT_STATE();
   }
 }
 function saveState() {
-  localStorage.setItem(LS_KEY, JSON.stringify(state));
+  const token = getToken();
+  if (!token) return;
+  fetch("/api/data", {
+    method: "PUT",
+    headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" },
+    body: JSON.stringify(state),
+  }).catch(console.error);
 }
 
-let state = loadState();
+let state = DEFAULT_STATE();
 let route = { view: "home", tripId: null, tab: "overview" };
 
 // -------- HELPERS --------
@@ -1395,6 +1496,7 @@ function newTrip(data) {
     reservations: [],
     notes: "",
     timeSlots: TIME_SLOTS_DEFAULT.slice(),
+    timezone: "",
     createdAt: new Date().toISOString()
   };
   state.trips.push(trip); saveState(); return trip;
@@ -1403,6 +1505,23 @@ function newTrip(data) {
 function deleteTrip(id) {
   state.trips = state.trips.filter(t => t.id !== id);
   saveState();
+}
+function duplicateTrip(id, ev) {
+  if (ev) ev.stopPropagation();
+  const src = state.trips.find(t => t.id === id);
+  if (!src) return;
+  const clone = JSON.parse(JSON.stringify(src));
+  clone.id = uid();
+  clone.title = src.title + " (copy)";
+  clone.startDate = "";
+  clone.endDate = "";
+  clone.expenses = [];
+  clone.createdAt = new Date().toISOString();
+  // Reset packing items to unpacked
+  (clone.packing || []).forEach(cat => cat.items.forEach(item => { item.packed = false; item.id = uid(); }));
+  state.trips.push(clone);
+  saveState();
+  render();
 }
 function currentTrip() { return state.trips.find(t => t.id === route.tripId); }
 
@@ -1413,13 +1532,14 @@ function setTab(t) { route.tab = t; render(); }
 
 // -------- RENDER --------
 function render() {
-  // set theme
   document.documentElement.setAttribute("data-theme", state.settings.theme || "beach");
+  applyAuthState();
+  stopTzClock();
   const root = document.getElementById("app-root");
   if (route.view === "home") root.innerHTML = renderHome();
   else if (route.view === "trip") root.innerHTML = renderTrip();
-  // wire up auto-grow textareas
   document.querySelectorAll("textarea.autogrow").forEach(autoGrow);
+  if (route.view === "trip" && currentTrip()?.timezone) startTzClock();
 }
 
 function autoGrow(el) {
@@ -1509,22 +1629,35 @@ function renderTrip() {
         <div class="trip-emoji" onclick="openEmojiPicker()" title="Change icon">${t.emoji}</div>
         <div class="trip-meta">
           <div class="trip-title">
-            <input value="${escapeHtml(t.title)}" oninput="updateTrip('title', this.value)" placeholder="Trip name" />
+            <input value="${escapeHtml(t.title)}" oninput="updateTrip('title', this.value)" placeholder="Trip name" ${isEditing() ? '' : 'readonly'} />
           </div>
           <div class="trip-sub">
             <span>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
               <input style="background:transparent;border:none;color:inherit;font:inherit;width:200px;"
-                     value="${escapeHtml(t.destination)}" oninput="updateTrip('destination', this.value)" placeholder="Destination" />
+                     value="${escapeHtml(t.destination)}" oninput="updateTrip('destination', this.value)" placeholder="Destination" ${isEditing() ? '' : 'readonly'} />
             </span>
             <span>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
               <input type="date" style="background:transparent;border:none;color:inherit;font:inherit;"
-                     value="${t.startDate}" onchange="updateTripDates('start', this.value)" />
+                     value="${t.startDate}" onchange="updateTripDates('start', this.value)" ${isEditing() ? '' : 'readonly'} />
               →
               <input type="date" style="background:transparent;border:none;color:inherit;font:inherit;"
-                     value="${t.endDate}" onchange="updateTripDates('end', this.value)" />
+                     value="${t.endDate}" onchange="updateTripDates('end', this.value)" ${isEditing() ? '' : 'readonly'} />
             </span>
+            ${isEditing() ? `
+            <span>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              <select style="background:transparent;border:none;color:inherit;font:inherit;font-size:13px;cursor:pointer;max-width:220px;"
+                      onchange="updateTrip('timezone', this.value)" title="Destination time zone">
+                <option value="">Time zone (optional)</option>
+                ${getTimezoneOptions(t.timezone || "")}
+              </select>
+            </span>` : (t.timezone ? `
+            <span>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              ${t.timezone.replace(/_/g," ")}
+            </span>` : "")}
           </div>
         </div>
         <div class="row">
@@ -1536,7 +1669,11 @@ function renderTrip() {
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
             Print
           </button>
-          <button class="btn danger" onclick="confirmDeleteTrip()" title="Delete trip">
+          <button class="btn edit-action" onclick="openShareModal('${t.id}')" title="Share this trip">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+            Share
+          </button>
+          <button class="btn danger edit-action" onclick="confirmDeleteTrip()" title="Delete trip">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
           </button>
         </div>
@@ -1555,6 +1692,7 @@ function renderTrip() {
         })()}
         <div class="stat"><div class="stat-label">Packed</div><div class="stat-value">${packDone}/${packTotal}</div></div>
         <div class="stat"><div class="stat-label">To book</div><div class="stat-value">${reservOpen}</div></div>
+        ${t.timezone ? `<div class="stat" id="tz-stat"><div class="stat-label">Local time</div><div class="stat-value" id="tz-clock">—</div></div>` : ""}
       </div>
     </div>
 
@@ -3152,6 +3290,104 @@ function showModal({ title, body, actions, size }) {
 }
 function closeModal() { document.getElementById("modal-root").innerHTML = ""; }
 
+// -------- PASSWORD MODAL --------
+function openPasswordModal() {
+  showModal({
+    title: "Sign in to edit",
+    size: "sm",
+    body: `
+      <div class="field">
+        <label>Master password</label>
+        <input type="password" id="pw-input" placeholder="Enter password" autocomplete="current-password"
+               style="width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:10px;font:inherit;font-size:14px;"
+               onkeydown="if(event.key==='Enter') submitPassword()" />
+        <div id="pw-error" style="color:#c0392b;font-size:12px;margin-top:6px;display:none;"></div>
+      </div>
+    `,
+    actions: [
+      { label: "Cancel", onClick: closeModal },
+      { label: "Sign in", primary: true, onClick: submitPassword },
+    ],
+  });
+  setTimeout(() => document.getElementById("pw-input")?.focus(), 50);
+}
+async function submitPassword() {
+  const input = document.getElementById("pw-input");
+  const errEl = document.getElementById("pw-error");
+  if (!input) return;
+  const password = input.value.trim();
+  if (!password) return;
+  input.disabled = true;
+  try {
+    const res = await fetch("/api/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ password }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Login failed");
+    setToken(data.token);
+    closeModal();
+    render();
+  } catch (err) {
+    input.disabled = false;
+    input.select();
+    if (errEl) { errEl.textContent = err.message; errEl.style.display = ""; }
+  }
+}
+
+// -------- SHARE --------
+async function openShareModal(tripId) {
+  showModal({
+    title: "Share this trip",
+    size: "sm",
+    body: `<div style="text-align:center;padding:16px 0;color:var(--ink-soft);">Generating link…</div>`,
+    actions: [{ label: "Close", onClick: closeModal }],
+  });
+  try {
+    const res = await fetch("/api/share/create", {
+      method: "POST",
+      headers: { "Authorization": `Bearer ${getToken()}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ tripId }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Failed");
+    const link = `${location.origin}/?share=${data.token}`;
+    showModal({
+      title: "Share this trip",
+      size: "sm",
+      body: `
+        <div class="field">
+          <label>Read-only link (anyone with this link can view)</label>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <input id="share-link-input" value="${link}" readonly
+                   style="flex:1;padding:9px 12px;border:1px solid var(--line);border-radius:9px;font:inherit;font-size:13px;background:var(--surface-2);" />
+            <button class="btn sm primary" onclick="copyShareLink()">Copy</button>
+          </div>
+          <div id="share-copy-msg" style="color:var(--primary);font-size:12px;margin-top:6px;display:none;">Copied to clipboard!</div>
+          <div class="hint" style="margin-top:10px;">This link lets anyone view the trip without signing in. The same link is reused each time.</div>
+        </div>
+      `,
+      actions: [{ label: "Done", primary: true, onClick: closeModal }],
+    });
+  } catch (err) {
+    showModal({
+      title: "Share this trip",
+      size: "sm",
+      body: `<div style="color:#c0392b;padding:12px 0;">${err.message}</div>`,
+      actions: [{ label: "Close", onClick: closeModal }],
+    });
+  }
+}
+function copyShareLink() {
+  const input = document.getElementById("share-link-input");
+  if (!input) return;
+  navigator.clipboard.writeText(input.value).then(() => {
+    const msg = document.getElementById("share-copy-msg");
+    if (msg) { msg.style.display = ""; setTimeout(() => msg.style.display = "none", 2000); }
+  }).catch(() => { input.select(); document.execCommand("copy"); });
+}
+
 // -------- CALCULATOR --------
 let calcState = { expr: "", just: false };
 function openCalc() {
@@ -3266,8 +3502,8 @@ function openSettings() {
             </label>
           </div>
           <div class="hint" style="margin-top:8px;">
-            ${stats.trips} trip${stats.trips===1?"":"s"} · ${stats.expenses} expense${stats.expenses===1?"":"s"} · ${stats.items} packing item${stats.items===1?"":"s"} saved locally.<br>
-            All data stays in your browser. Export regularly to back up.
+            ${stats.trips} trip${stats.trips===1?"":"s"} · ${stats.expenses} expense${stats.expenses===1?"":"s"} · ${stats.items} packing item${stats.items===1?"":"s"} synced to cloud.<br>
+            Export a JSON backup any time. Import merges by trip ID — existing backups still work.
           </div>
         </div>
 
@@ -3313,16 +3549,58 @@ function importJson(ev) {
   reader.readAsText(file);
 }
 function resetAll() {
+  if (!isEditing()) { alert("Sign in to edit."); return; }
   if (!confirm("Delete ALL trips and data? This cannot be undone.")) return;
   if (!confirm("Really? Last chance.")) return;
-  state = { trips: [], settings: { theme: "beach", currency: "USD" } };
+  state = DEFAULT_STATE();
   saveState(); closeModal(); goHome();
 }
 
 // -------- INITIAL --------
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
+  // Register PWA service worker.
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("/sw.js").catch(() => {});
+  }
+
+  // Handle shared trip link: ?share=<token>
+  const shareToken = new URLSearchParams(location.search).get("share");
+  if (shareToken) {
+    await loadSharedTrip(shareToken);
+    return;
+  }
+
+  state = await loadState();
+  applyAuthState();
   render();
 });
+
+async function loadSharedTrip(token) {
+  document.getElementById("app-root").innerHTML = `<div style="text-align:center;padding:60px 20px;color:var(--ink-soft);">Loading shared trip…</div>`;
+  try {
+    const res = await fetch(`/api/share/${token}`);
+    if (!res.ok) throw new Error("not found");
+    const { trip, settings } = await res.json();
+    // Populate state with just this trip for rendering purposes.
+    state = { trips: [trip], settings: settings || { theme: "beach", currency: "USD" } };
+    // Force view-only: never set a token in share mode.
+    document.documentElement.setAttribute("data-auth", "locked");
+    document.getElementById("view-only-banner").style.display = "";
+    document.getElementById("view-only-banner").innerHTML = '🔗 Shared view — read only';
+    document.getElementById("lock-btn").style.display = "none";
+    document.getElementById("newtrip-nav-btn").style.display = "none";
+    route = { view: "trip", tripId: trip.id, tab: "overview" };
+    render();
+  } catch {
+    document.getElementById("app-root").innerHTML = `
+      <div style="text-align:center;padding:80px 20px;">
+        <div style="font-size:48px;margin-bottom:16px;">🔗</div>
+        <h3>Share link not found</h3>
+        <p style="color:var(--ink-soft);">This link may have expired or been removed.</p>
+        <button class="btn primary" onclick="location.href='/'">Go home</button>
+      </div>`;
+  }
+}
 
 function renderTripCard(t) {
   const dU = daysUntil(t.startDate);
@@ -3359,12 +3637,14 @@ function renderTripCard(t) {
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
         ${totalSpend > 0 ? fmtCurrency(totalSpend) : (t.budget ? fmtCurrency(t.budget) + "/person budget" : "No expenses yet")}
       </div>
+      <button class="btn sm edit-action" style="margin-top:10px;width:100%;justify-content:center;"
+              onclick="duplicateTrip('${t.id}', event)" title="Duplicate as template">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        Duplicate
+      </button>
     </div>
   `;
 }
-</script>
-</body>
-</html>
 </script>
 </body>
 </html>
