@@ -1822,6 +1822,7 @@ function svgIcon(name) {
 // -------- OVERVIEW TAB --------
 function renderOverview(t) {
   const totalSpend = (t.expenses || []).reduce((s, e) => s + (parseFloat(e.cost) || 0), 0);
+  const numPeople = Math.max(1, (t.travelers || []).length);
   const nextRes = (t.reservations || []).filter(r => r.status !== "booked").slice(0, 3);
   const themes = (t.itinerary || []).map((d, i) => ({ i: i+1, theme: d.theme })).filter(x => x.theme);
   return `
