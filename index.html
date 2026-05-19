@@ -1607,6 +1607,24 @@ function autoGrow(el) {
 
 // -------- HOME / DASHBOARD --------
 function renderHome() {
+  if (document.documentElement.getAttribute("data-auth") === "locked") {
+    return `
+      <section class="hero">
+        <div class="hero-text">
+          <h1>Hey Hoang Le — <span class="accent">where are we going?</span></h1>
+          <p>Sign in to view and manage your trips.</p>
+        </div>
+        <div class="hero-emoji">✈️</div>
+      </section>
+      <div class="empty-state">
+        <div class="e-emoji">🔒</div>
+        <h3>Sign in to continue</h3>
+        <p>Your trips are private. Enter the master password to view and edit them.</p>
+        <button class="btn primary lg" onclick="openPasswordModal()">Sign in</button>
+      </div>
+    `;
+  }
+
   const trips = state.trips.slice().sort((a, b) => (a.startDate || "z").localeCompare(b.startDate || "z"));
   const upcoming = trips.filter(t => {
     const d = daysUntil(t.endDate); return d === null || d >= 0;
