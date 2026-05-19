@@ -3826,10 +3826,27 @@ function openSettings() {
           <button class="btn danger" onclick="resetAll()">Reset all data</button>
         </div>
         ` : ""}
+
+        <div class="field">
+          <label>App</label>
+          <button class="btn" onclick="hardRefresh()">🔄 Hard refresh &amp; empty cache</button>
+          <div class="hint" style="margin-top:8px;">Clears the service worker cache and reloads. Use if the app feels stuck on an old version.</div>
+        </div>
       </div>
     `,
     actions: [{ label: "Done", primary: true, onClick: closeModal }]
   });
+}
+async function hardRefresh() {
+  if ('serviceWorker' in navigator) {
+    const regs = await navigator.serviceWorker.getRegistrations();
+    await Promise.all(regs.map(r => r.unregister()));
+  }
+  if ('caches' in window) {
+    const keys = await caches.keys();
+    await Promise.all(keys.map(k => caches.delete(k)));
+  }
+  location.reload(true);
 }
 function pickTheme(id) {
   setTheme(id);
