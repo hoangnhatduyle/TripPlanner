@@ -3805,7 +3805,7 @@ function openSettings() {
           </select>
         </div>
 
-        ${!isShareMode() ? `
+        ${document.documentElement.getAttribute("data-auth") === "unlocked" ? `
         <div class="field">
           <label>Data</label>
           <div class="row">
