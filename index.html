@@ -1760,7 +1760,7 @@ function renderTrip() {
         <div class="stat"><div class="stat-label">Travelers</div><div class="stat-value">${(t.travelers||[]).length || "—"}</div></div>
         <div class="stat"><div class="stat-label">Total spend</div><div class="stat-value accent">${fmtCurrency(totalSpend)}</div></div>
         ${(() => {
-          const myData = t.myTraveler ? computeMyData(t) : null;
+          const myData = getMyTraveler(t.id) ? computeMyData(t) : null;
           if (myData) {
             return `<div class="stat"><div class="stat-label">My share</div><div class="stat-value">${fmtCurrency(myData.myOwed)}</div>${t.budget ? `<div style="font-size:11px;color:${myData.myOwed > t.budget ? '#c0392b' : 'var(--ink-soft)'};margin-top:2px;">of ${fmtCurrency(t.budget)} budget</div>` : ""}</div>`;
           }
@@ -1835,10 +1835,10 @@ function renderOverview(t) {
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;">
 
         <div class="stat" style="padding:16px;">
-          <div class="stat-label">Travelers ${t.myTraveler ? '' : '<span class="muted text-sm" style="text-transform:none;letter-spacing:0;font-weight:500;">· click a name to set as "You"</span>'}</div>
+          <div class="stat-label">Travelers ${getMyTraveler(t.id) ? '' : '<span class="muted text-sm" style="text-transform:none;letter-spacing:0;font-weight:500;">· tap your name to track your share</span>'}</div>
           <div style="margin-top:8px;">
             ${(t.travelers||[]).length ? (t.travelers.map(p => {
-              const isMe = t.myTraveler === p;
+              const isMe = getMyTraveler(t.id) === p;
               return `<span class="tag ${isMe?'is-me':''}" onclick="setMyTraveler('${escapeAttr(p)}')" title="${isMe ? 'This is you! Click to unset.' : 'Click to set as you'}">${escapeHtml(p)}${isMe ? ' <span class="me-badge">(You)</span>' : ''}</span>`;
             }).join(" ")) : `<span class="muted text-sm">Add travelers below ↓</span>`}
           </div>
@@ -1891,9 +1891,16 @@ function renderOverview(t) {
       </div>
 
       ${(() => {
-        const myData = t.myTraveler ? computeMyData(t) : null;
-        if (!myData) return '';
-        const me = t.myTraveler;
+        const myTraveler = getMyTraveler(t.id);
+        const myData = myTraveler ? computeMyData(t) : null;
+        if (!myData) return `
+        <div class="my-summary" style="opacity:0.6;">
+          <div class="my-summary-head">
+            <h4>My Summary</h4>
+          </div>
+          <p class="hint" style="margin:8px 0 0;">👆 Tap your name in the Travelers list above to see your personal expense breakdown.</p>
+        </div>`;
+        const me = myTraveler;
         return `
         <div class="my-summary">
           <div class="my-summary-head">
@@ -1971,17 +1978,24 @@ function removeTraveler(name) {
   if (!guardEdit()) return;
   const t = currentTrip(); if (!t) return;
   t.travelers = (t.travelers || []).filter(p => p !== name);
-  if (t.myTraveler === name) t.myTraveler = null;
+  if (getMyTraveler(t.id) === name) localStorage.removeItem("myTraveler_" + t.id);
   saveState(); render();
+}
+function getMyTraveler(tripId) {
+  return localStorage.getItem("myTraveler_" + tripId) || null;
 }
 function setMyTraveler(name) {
-  if (!guardEdit()) return;
   const t = currentTrip(); if (!t) return;
-  t.myTraveler = (t.myTraveler === name) ? null : name;
-  saveState(); render();
+  const current = getMyTraveler(t.id);
+  if (current === name) {
+    localStorage.removeItem("myTraveler_" + t.id);
+  } else {
+    localStorage.setItem("myTraveler_" + t.id, name);
+  }
+  render();
 }
 function computeMyData(t) {
-  const me = t.myTraveler;
+  const me = getMyTraveler(t.id);
   if (!me) return null;
   const expenses = t.expenses || [];
   const travelers = t.travelers || [];
