@@ -542,37 +542,38 @@ input, textarea, select { font-family: inherit; }
 }
 .year-track {
   position: relative;
-  display: inline-flex; align-items: center; gap: 16px;
-  padding: 6px 10px;
-  min-width: 240px;
+  display: inline-flex; align-items: center; gap: 22px;
+  padding: 12px 16px 6px;
+  min-width: 260px;
   user-select: none;
 }
 .year-track::before {
   content: "";
   position: absolute;
-  left: 8px; right: 8px; top: 50%;
-  height: 2px; background: var(--line);
-  transform: translateY(-50%);
+  left: 14px; right: 14px; top: 18px;
+  height: 4px; background: var(--line-strong);
+  border-radius: 999px;
 }
 .year-node {
   position: relative;
-  display: inline-flex; flex-direction: column; align-items: center; gap: 6px;
+  display: inline-flex; flex-direction: column; align-items: center; gap: 8px;
   cursor: pointer; user-select: none;
-  padding: 4px 6px; border-radius: 12px;
+  padding: 2px 4px; border-radius: 12px;
   transition: all 0.15s;
   z-index: 1;
 }
-.year-node:hover { background: var(--surface-2); }
 .year-dot {
-  width: 10px; height: 10px; border-radius: 50%;
-  background: var(--line-strong);
-  position: relative;
+  width: 12px; height: 12px; border-radius: 50%;
+  background: var(--surface-solid);
+  border: 2px solid var(--line-strong);
 }
 .year-node.active .year-dot {
-  background: var(--primary);
+  border-color: var(--primary);
+  background: white;
   box-shadow: 0 0 0 6px var(--primary-soft);
 }
-.year-label { font-size: 12px; font-weight: 700; color: var(--ink); }
+.year-label { font-size: 12px; font-weight: 700; color: var(--ink-soft); }
+.year-node.active .year-label { color: var(--primary-dark); }
 .year-count {
   font-size: 10px; font-weight: 700;
   color: var(--primary-dark);
@@ -581,17 +582,37 @@ input, textarea, select { font-family: inherit; }
 }
 .year-handle {
   position: absolute;
-  top: 50%;
+  top: 18px;
   width: 18px; height: 18px;
   border-radius: 50%;
   background: var(--primary);
   transform: translate(-50%, -50%);
   box-shadow: 0 8px 18px rgba(0,0,0,0.18);
-  border: 2px solid white;
+  border: 3px solid white;
   cursor: grab;
   z-index: 2;
 }
 .year-handle:active { cursor: grabbing; }
+.year-tooltip {
+  position: absolute;
+  top: -26px;
+  background: var(--primary);
+  color: white;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 8px;
+  border-radius: 999px;
+  transform: translate(-50%, -100%);
+  white-space: nowrap;
+}
+.year-tooltip::after {
+  content: "";
+  position: absolute;
+  left: 50%; bottom: -4px;
+  width: 8px; height: 8px;
+  background: var(--primary);
+  transform: translateX(-50%) rotate(45deg);
+}
 
 .postcard-wall {
   column-count: 3;
@@ -2276,6 +2297,9 @@ function renderHome() {
         const filteredCount = activeYear === "all"
           ? past.length
           : past.filter(t => (t.startDate || "").startsWith(activeYear)).length;
+        const filteredTrips = activeYear === "all"
+          ? past
+          : past.filter(t => (t.startDate || "").startsWith(activeYear));
 
         const timelineHtml = `
           <div class="year-map" role="tablist" aria-label="Past years">
@@ -2287,18 +2311,20 @@ function renderHome() {
                   <div class="year-label">${y}</div>
                   <div class="year-count">${yearCounts[y]}</div>
                 </div>`).join("")}
-              <div class="year-handle" id="year-handle"></div>
+              <div class="year-handle" id="year-handle"><div class="year-tooltip" id="year-tooltip"></div></div>
             </div>
           </div>`;
 
-        const wallHtml = yearsToShow.map((y, idx) => {
-          const tripsForYear = past.filter(t => (t.startDate || "").startsWith(y));
-          return `
-            <div class="past-year" id="past-year-${y}" data-year="${y}">
-              <div class="past-year-header">${y} · ${tripsForYear.length} trip${tripsForYear.length === 1 ? "" : "s"}</div>
-              ${tripsForYear.map((t, i) => renderPostcard(t, i + idx)).join("")}
-            </div>`;
-        }).join("");
+        const wallHtml = activeYear === "all"
+          ? yearsToShow.map((y, idx) => {
+              const tripsForYear = past.filter(t => (t.startDate || "").startsWith(y));
+              return `
+                <div class="past-year" id="past-year-${y}" data-year="${y}">
+                  <div class="past-year-header">${y} · ${tripsForYear.length} trip${tripsForYear.length === 1 ? "" : "s"}</div>
+                  ${tripsForYear.map((t, i) => renderPostcard(t, i + idx)).join("")}
+                </div>`;
+            }).join("")
+          : `<div class="trip-grid">${filteredTrips.map(renderTripCard).join("")}</div>`;
 
         return `
           <section class="past-section" id="past-root">
@@ -4999,6 +5025,7 @@ function renderPostcard(t, idx) {
 function setupPastYearScrubber() {
   const track = document.getElementById("year-track");
   const handle = document.getElementById("year-handle");
+  const tooltip = document.getElementById("year-tooltip");
   if (!track || !handle) return;
   const points = Array.from(track.querySelectorAll(".year-node"));
   if (!points.length) return;
@@ -5008,12 +5035,16 @@ function setupPastYearScrubber() {
     return points.find(p => p.dataset.year === pastYearFilter) || points[points.length - 1];
   };
 
-  const positionHandle = (point) => {
+  const positionHandle = (point, showTooltip) => {
     if (!point) return;
     const trackRect = track.getBoundingClientRect();
     const pointRect = point.getBoundingClientRect();
     const center = pointRect.left - trackRect.left + pointRect.width / 2;
     handle.style.left = `${center}px`;
+    if (tooltip) {
+      tooltip.textContent = point.dataset.year || "";
+      tooltip.style.display = showTooltip ? "block" : "none";
+    }
   };
 
   const pickNearestYear = (clientX) => {
@@ -5030,16 +5061,15 @@ function setupPastYearScrubber() {
     return nearest;
   };
 
-  positionHandle(resolveActive());
+  positionHandle(resolveActive(), false);
 
   let dragging = false;
+  let pendingYear = null;
   const onPointerMove = (e) => {
     if (!dragging) return;
     const nearest = pickNearestYear(e.clientX);
-    positionHandle(nearest);
-    if (pastYearFilter !== nearest.dataset.year) {
-      setPastYearFilter(nearest.dataset.year);
-    }
+    pendingYear = nearest.dataset.year;
+    positionHandle(nearest, true);
   };
 
   const stopDrag = (e) => {
@@ -5048,6 +5078,12 @@ function setupPastYearScrubber() {
     try { handle.releasePointerCapture(e.pointerId); } catch {}
     document.removeEventListener("pointermove", onPointerMove);
     document.removeEventListener("pointerup", stopDrag);
+    if (pendingYear && pastYearFilter !== pendingYear) {
+      setPastYearFilter(pendingYear);
+    } else {
+      positionHandle(resolveActive(), false);
+    }
+    pendingYear = null;
   };
 
   handle.onpointerdown = (e) => {
@@ -5060,10 +5096,14 @@ function setupPastYearScrubber() {
   track.onpointerdown = (e) => {
     if (e.target === handle) return;
     const nearest = pickNearestYear(e.clientX);
-    positionHandle(nearest);
-    if (pastYearFilter !== nearest.dataset.year) {
-      setPastYearFilter(nearest.dataset.year);
+    pendingYear = nearest.dataset.year;
+    positionHandle(nearest, true);
+    if (pendingYear && pastYearFilter !== pendingYear) {
+      setPastYearFilter(pendingYear);
+    } else {
+      positionHandle(resolveActive(), false);
     }
+    pendingYear = null;
   };
 }
 
