@@ -635,14 +635,11 @@ input, textarea, select { font-family: inherit; }
 
 .postcard-row {
   display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: minmax(240px, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 16px;
-  overflow-x: auto;
-  padding-bottom: 8px;
-  scroll-snap-type: x mandatory;
+  align-items: start;
 }
-.postcard-row .postcard { scroll-snap-align: start; }
+.postcard-row .postcard { width: 100%; max-width: 260px; justify-self: start; }
 
 .postcard-grid {
   display: grid;
