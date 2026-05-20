@@ -2054,12 +2054,21 @@ function renderOverview(t) {
                 ${myData.net > 0.01 ? 'Owed ' + fmtCurrency(myData.net) : myData.net < -0.01 ? 'Owe ' + fmtCurrency(-myData.net) : 'Even'}
               </div>
             </div>
+            ${myData.myUnsettled > 0.01 ? `
+            <div class="my-stat">
+              <div class="label">I still owe</div>
+              <div class="value" style="color:#c0392b">${fmtCurrency(myData.myUnsettled)}</div>
+            </div>` : ""}
+            ${myData.owesMe.length > 0 ? `
+            <div class="my-stat">
+              <div class="label">Owed to me</div>
+              <div class="value" style="color:#c0392b">Waiting on ${myData.owesMe.length}</div>
+            </div>` : ""}
+            ${myData.myOwed > 0 && myData.myUnsettled < 0.01 && myData.owesMe.length === 0 ? `
             <div class="my-stat">
               <div class="label">Settled</div>
-              <div class="value" style="color:${myData.myUnsettled < 0.01 && myData.myOwed > 0 ? '#2e7d32' : myData.myUnsettled > 0.01 ? '#c0392b' : 'var(--ink-soft)'}">
-                ${myData.myOwed > 0 ? (myData.myUnsettled < 0.01 ? '✓ All' : fmtCurrency(myData.myUnsettled) + ' left') : '—'}
-              </div>
-            </div>
+              <div class="value" style="color:#2e7d32">✓ All</div>
+            </div>` : ""}
           </div>
 
           ${myData.owesMe.length ? `
