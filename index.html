@@ -906,6 +906,7 @@ table.t tfoot td {
   padding: 20px;
   animation: fadein 0.15s ease;
 }
+.login-bg { background: transparent; backdrop-filter: none; }
 @keyframes fadein { from { opacity: 0; } to { opacity: 1; } }
 @keyframes popin { from { transform: scale(0.96); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 .modal {
@@ -1808,6 +1809,10 @@ function renderTrip() {
   const packTotal = t.packing.reduce((s, c) => s + c.items.length, 0);
   const packDone = t.packing.reduce((s, c) => s + c.items.filter(i => i.packed).length, 0);
 
+  const allowedTabs = window._shareTabs || ALL_TABS;
+  if (!allowedTabs.includes(route.tab)) {
+    route = { ...route, tab: allowedTabs[0] || "overview" };
+  }
   const tab = route.tab;
   return `
     <div class="trip-header">
@@ -1868,21 +1873,21 @@ function renderTrip() {
         <div class="stat"><div class="stat-label">Countdown</div><div class="stat-value primary">${cdLabel}</div></div>
         <div class="stat"><div class="stat-label">Duration</div><div class="stat-value">${nights ? nights + (nights===1?" day":" days") : "—"}</div></div>
         <div class="stat"><div class="stat-label">Travelers</div><div class="stat-value">${(t.travelers||[]).length || "—"}</div></div>
-        <div class="stat"><div class="stat-label">Total spend</div><div class="stat-value accent">${fmtCurrency(totalSpend)}</div><div style="font-size:11px;color:var(--ink-soft);margin-top:2px;">all expenses</div></div>
-        ${_myTraveler ? `<div class="stat"><div class="stat-label">Your expenses</div><div class="stat-value">${fmtCurrency(myExpensesTotal)}</div><div style="font-size:11px;color:var(--ink-soft);margin-top:2px;">as ${escapeHtml(_myTraveler)}</div></div>` : ""}
-        <div class="stat"><div class="stat-label">Packed</div><div class="stat-value">${packDone}/${packTotal}</div></div>
-        <div class="stat"><div class="stat-label">To book</div><div class="stat-value">${reservOpen}</div></div>
+        ${allowedTabs.includes("expenses") ? `<div class="stat"><div class="stat-label">Total spend</div><div class="stat-value accent">${fmtCurrency(totalSpend)}</div><div style="font-size:11px;color:var(--ink-soft);margin-top:2px;">all expenses</div></div>` : ""}
+        ${allowedTabs.includes("expenses") && _myTraveler ? `<div class="stat"><div class="stat-label">Your expenses</div><div class="stat-value">${fmtCurrency(myExpensesTotal)}</div><div style="font-size:11px;color:var(--ink-soft);margin-top:2px;">as ${escapeHtml(_myTraveler)}</div></div>` : ""}
+        ${allowedTabs.includes("packing") ? `<div class="stat"><div class="stat-label">Packed</div><div class="stat-value">${packDone}/${packTotal}</div></div>` : ""}
+        ${allowedTabs.includes("reservations") ? `<div class="stat"><div class="stat-label">To book</div><div class="stat-value">${reservOpen}</div></div>` : ""}
         ${t.timezone ? `<div class="stat" id="tz-stat"><div class="stat-label">Local time</div><div class="stat-value" id="tz-clock">—</div></div>` : ""}
       </div>
     </div>
 
     <div class="tabs no-print">
-      ${tabBtn("overview", "Overview", svgIcon("home"))}
-      ${tabBtn("itinerary", "Itinerary", svgIcon("calendar"))}
-      ${tabBtn("expenses", "Expenses", svgIcon("dollar"))}
-      ${tabBtn("packing", "Packing", svgIcon("luggage"))}
-      ${tabBtn("reservations", "Reservations", svgIcon("bookmark"))}
-      ${tabBtn("notes", "Notes", svgIcon("edit"))}
+      ${allowedTabs.includes("overview") ? tabBtn("overview", "Overview", svgIcon("home")) : ""}
+      ${allowedTabs.includes("itinerary") ? tabBtn("itinerary", "Itinerary", svgIcon("calendar")) : ""}
+      ${allowedTabs.includes("expenses") ? tabBtn("expenses", "Expenses", svgIcon("dollar")) : ""}
+      ${allowedTabs.includes("packing") ? tabBtn("packing", "Packing", svgIcon("luggage")) : ""}
+      ${allowedTabs.includes("reservations") ? tabBtn("reservations", "Reservations", svgIcon("bookmark")) : ""}
+      ${allowedTabs.includes("notes") ? tabBtn("notes", "Notes", svgIcon("edit")) : ""}
     </div>
 
     ${tab === "overview" ? renderOverview(t) : ""}
@@ -1931,6 +1936,7 @@ function renderOverview(t) {
   const numPeople = Math.max(1, (t.travelers || []).length);
   const nextRes = (t.reservations || []).filter(r => r.status !== "booked").slice(0, 3);
   const themes = (t.itinerary || []).map((d, i) => ({ i: i+1, theme: d.theme })).filter(x => x.theme);
+  const shareReadOnly = document.documentElement.getAttribute("data-share") === "read";
   return `
     <div class="panel">
       <div class="panel-head">
@@ -1940,18 +1946,23 @@ function renderOverview(t) {
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;">
 
         <div class="stat" style="padding:16px;">
-          <div class="stat-label">Travelers ${getMyTraveler(t.id) ? '' : '<span class="muted text-sm" style="text-transform:none;letter-spacing:0;font-weight:500;">· tap your name to track your share</span>'}</div>
+          <div class="stat-label">Travelers</div>
           <div style="margin-top:8px;">
             ${(t.travelers||[]).length ? (t.travelers.map(p => {
+              if (shareReadOnly) {
+                return `<span class="tag">${escapeHtml(p)}</span>`;
+              }
               const isMe = getMyTraveler(t.id) === p;
               return `<span class="tag ${isMe?'is-me':''}" onclick="setMyTraveler('${escapeAttr(p)}')" title="${isMe ? 'This is you! Click to unset.' : 'Click to set as you'}">${escapeHtml(p)}${isMe ? ' <span class="me-badge">(You)</span>' : ''}</span>`;
-            }).join(" ")) : `<span class="muted text-sm">Add travelers below ↓</span>`}
+            }).join(" ")) : `<span class="muted text-sm">${shareReadOnly ? "No travelers listed." : "Add travelers below ↓"}</span>`}
           </div>
+          ${shareReadOnly ? "" : `
+          <div style="margin-top:6px;"><span class="muted text-sm" style="text-transform:none;letter-spacing:0;font-weight:500;">Tap your name to track your share</span></div>
           <div style="margin-top:10px;">
             <input id="trav-input" placeholder="Add traveler name + Enter"
                    style="width:100%;padding:7px 10px;border:1px solid var(--line);border-radius:8px;font-size:13px;background:var(--surface-2);"
                    onkeydown="if(event.key==='Enter'){addTraveler(this.value);this.value='';}"/>
-          </div>
+          </div>`}
         </div>
 
         <div class="stat" style="padding:16px;">
@@ -2011,7 +2022,7 @@ function renderOverview(t) {
         ` : ""}
       </div>
 
-      ${(() => {
+      ${shareReadOnly ? "" : (() => {
         const myTraveler = getMyTraveler(t.id);
         const myData = myTraveler ? computeMyData(t) : null;
         if (!myData) return `
@@ -3567,7 +3578,7 @@ function showLoginModal(defaultTab = "login") {
   if (!modalRoot) return;
   const inputStyle = "width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:10px;font:inherit;font-size:14px;";
   modalRoot.innerHTML = `
-    <div class="modal-bg" onclick="if(event.target===this&&${isLoggedIn()})closeModal()">
+    <div class="modal-bg login-bg" onclick="if(event.target===this&&${isLoggedIn()})closeModal()">
       <div class="modal" style="max-width:400px;">
         <div class="modal-head" style="padding:22px 24px 0;">
           <h3 id="auth-modal-title" style="font-size:20px;font-weight:700;">Sign In</h3>
@@ -3699,6 +3710,18 @@ async function submitRegister() {
 }
 
 // -------- SHARE --------
+const ALL_TABS = ["overview","itinerary","expenses","packing","reservations","notes"];
+const TAB_LABELS = { overview:"Overview", itinerary:"Itinerary", expenses:"Expenses", packing:"Packing", reservations:"Reservations", notes:"Notes" };
+
+function updateShareReadLink() {
+  const input = document.getElementById("share-read-input");
+  if (!input) return;
+  const base = input.dataset.base;
+  const checked = ALL_TABS.filter(t => document.getElementById(`stab-${t}`)?.checked);
+  const allSelected = checked.length === ALL_TABS.length;
+  input.value = allSelected ? base : `${base}&tabs=${checked.join(",")}`;
+}
+
 async function openShareModal(tripId) {
   showModal({
     title: "Share this trip",
@@ -3716,7 +3739,7 @@ async function openShareModal(tripId) {
     if (!readRes.ok) throw new Error(readData.error || "Failed to create read link");
     if (!editRes.ok) throw new Error(editData.error || "Failed to create edit link");
 
-    const readLink = `${location.origin}/?share=${readData.token}`;
+    const readBase = `${location.origin}/?share=${readData.token}`;
     const editLink = `${location.origin}/?share=${editData.token}`;
 
     showModal({
@@ -3725,15 +3748,27 @@ async function openShareModal(tripId) {
       body: `
         <div class="field">
           <label>View-only link</label>
+          <div style="margin:8px 0 10px;">
+            <div style="font-size:12px;font-weight:600;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px;">Tabs to include</div>
+            <div style="display:flex;flex-wrap:wrap;gap:6px;">
+              ${ALL_TABS.map(t => `
+                <label style="display:flex;align-items:center;gap:5px;font-size:13px;cursor:pointer;
+                              padding:5px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface-2);user-select:none;">
+                  <input type="checkbox" id="stab-${t}" value="${t}" checked onchange="updateShareReadLink()"
+                         style="accent-color:var(--primary);cursor:pointer;" />
+                  ${TAB_LABELS[t]}
+                </label>`).join("")}
+            </div>
+          </div>
           <div style="display:flex;gap:8px;align-items:center;">
-            <input id="share-read-input" value="${readLink}" readonly
+            <input id="share-read-input" value="${readBase}" data-base="${readBase}" readonly
                    style="flex:1;padding:9px 12px;border:1px solid var(--line);border-radius:9px;font:inherit;font-size:13px;background:var(--surface-2);" />
             <button class="btn sm" onclick="copyShareLinkById('share-read-input','share-read-msg')">Copy</button>
           </div>
           <div id="share-read-msg" style="color:var(--primary);font-size:12px;margin-top:4px;display:none;">Copied!</div>
           <div class="hint" style="margin-top:6px;">Anyone can view this trip without signing in.</div>
         </div>
-        <div class="field" style="margin-top:14px;">
+        <div class="field" style="margin-top:16px;">
           <label>Editable link</label>
           <div style="display:flex;gap:8px;align-items:center;">
             <input id="share-edit-input" value="${editLink}" readonly
@@ -4011,7 +4046,11 @@ async function loadSharedTrip(token) {
       banner.innerHTML = `🔗 Shared view — read only`;
     }
 
-    route = { view: "trip", tripId: trip.id, tab: "overview" };
+    const tabsParam = new URLSearchParams(location.search).get("tabs");
+    window._shareTabs = tabsParam ? tabsParam.split(",").filter(t => ALL_TABS.includes(t)) : null;
+
+    const firstTab = window._shareTabs ? window._shareTabs[0] : "overview";
+    route = { view: "trip", tripId: trip.id, tab: firstTab || "overview" };
     render();
   } catch {
     document.getElementById("app-root").innerHTML = `
