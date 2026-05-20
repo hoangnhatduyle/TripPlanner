@@ -1632,8 +1632,35 @@ const THEMES = [
 
 // -------- TIMEZONE --------
 const TIMEZONES = [
-  "Pacific/Honolulu","America/Anchorage","America/Los_Angeles","America/Denver",
-  "America/Chicago","America/New_York","America/Sao_Paulo","Atlantic/Reykjavik",
+  "America/Adak",
+  "Pacific/Honolulu",
+  "America/Anchorage",
+  "America/Juneau",
+  "America/Metlakatla",
+  "America/Nome",
+  "America/Sitka",
+  "America/Yakutat",
+  "America/Los_Angeles",
+  "America/Boise",
+  "America/Denver",
+  "America/Phoenix",
+  "America/Chicago",
+  "America/Indiana/Knox",
+  "America/Indiana/Tell_City",
+  "America/Indiana/Indianapolis",
+  "America/Indiana/Marengo",
+  "America/Indiana/Petersburg",
+  "America/Indiana/Vevay",
+  "America/Indiana/Vincennes",
+  "America/Indiana/Winamac",
+  "America/Kentucky/Louisville",
+  "America/Kentucky/Monticello",
+  "America/Detroit",
+  "America/New_York",
+  "America/North_Dakota/Beulah",
+  "America/North_Dakota/Center",
+  "America/North_Dakota/New_Salem",
+  "America/Sao_Paulo","Atlantic/Reykjavik",
   "Europe/London","Europe/Paris","Europe/Berlin","Europe/Helsinki","Europe/Moscow",
   "Asia/Dubai","Asia/Kolkata","Asia/Bangkok","Asia/Singapore","Asia/Ho_Chi_Minh",
   "Asia/Tokyo","Asia/Seoul","Asia/Shanghai","Australia/Sydney","Pacific/Auckland",
@@ -4019,10 +4046,11 @@ function updateTrip(key, value) {
   if (!guardEdit()) return;
   const t = currentTrip(); if (!t) return;
   t[key] = value; saveState();
-  if (["title","destination","budget"].includes(key)) {
+  if (["title","destination","budget","timezone"].includes(key)) {
     // update only header stats — full re-render
     const hdrEls = document.querySelectorAll(".stat-value");
     if (key === "budget") render();
+    if (key === "timezone") render();
   }
 }
 function updateTripDates(which, value) {
