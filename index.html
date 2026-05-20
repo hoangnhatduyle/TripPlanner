@@ -489,6 +489,179 @@ input, textarea, select { font-family: inherit; }
 }
 .trip-card.new:hover .plus { background: white; }
 
+/* ===========================================================
+   PAST TRIPS — TIMELINE + POSTCARD WALL
+   =========================================================== */
+.past-section {
+  margin-top: 34px;
+  padding: 18px 18px 24px;
+  border-radius: 22px;
+  border: 1px solid var(--line);
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.78) 0%, rgba(255,255,255,0.9) 100%),
+    repeating-linear-gradient(135deg, rgba(255,255,255,0.35) 0 12px, rgba(255,255,255,0.15) 12px 24px);
+  backdrop-filter: blur(10px);
+}
+.past-head {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 16px; flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+.past-title {
+  display: flex; align-items: baseline; gap: 10px;
+}
+.past-title h2 { font-size: 20px; }
+.past-title .muted { font-size: 12px; }
+
+.year-map {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--surface-solid);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 10px 14px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.year-map::-webkit-scrollbar { display: none; }
+.year-pill-mini {
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-size: 12px; font-weight: 700;
+  border: 1px dashed var(--line-strong);
+  background: var(--surface-2);
+  color: var(--ink-soft);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s;
+}
+.year-pill-mini.active {
+  border-style: solid;
+  border-color: var(--primary);
+  background: var(--primary-soft);
+  color: var(--primary-dark);
+}
+.year-track {
+  display: inline-flex; align-items: center; gap: 12px;
+  padding: 0 6px;
+}
+.year-node {
+  display: inline-flex; align-items: center; gap: 8px;
+  cursor: pointer; user-select: none;
+  padding: 4px 6px; border-radius: 999px;
+  transition: all 0.15s;
+}
+.year-node:hover { background: var(--surface-2); }
+.year-dot {
+  width: 10px; height: 10px; border-radius: 50%;
+  background: var(--line-strong);
+  position: relative;
+}
+.year-node.active .year-dot {
+  background: var(--primary);
+  box-shadow: 0 0 0 6px var(--primary-soft);
+}
+.year-label { font-size: 12px; font-weight: 700; color: var(--ink); }
+.year-count {
+  font-size: 10px; font-weight: 700;
+  color: var(--primary-dark);
+  background: var(--primary-soft);
+  border-radius: 999px; padding: 2px 7px;
+}
+
+.postcard-wall {
+  column-count: 3;
+  column-gap: 18px;
+  padding-top: 10px;
+}
+.past-year {
+  break-inside: avoid;
+  margin-bottom: 18px;
+}
+.past-year-header {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-size: 12px; font-weight: 800; letter-spacing: 0.06em;
+  text-transform: uppercase; color: var(--ink-soft);
+  background: var(--surface-solid);
+  border: 1px solid var(--line);
+  padding: 6px 10px; border-radius: 999px;
+  margin-bottom: 12px;
+}
+
+.postcard {
+  break-inside: avoid;
+  display: inline-block;
+  width: 100%;
+  padding: 14px 16px 12px;
+  margin: 0 0 18px;
+  border-radius: 16px;
+  border: 1px solid var(--line);
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.92), rgba(255,255,255,0.98)),
+    radial-gradient(circle at 20% 20%, rgba(0,0,0,0.04), transparent 45%);
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+  transform: rotate(var(--card-tilt, -1deg));
+  transition: all 0.18s ease;
+  position: relative; overflow: hidden;
+}
+.postcard:hover { transform: translateY(-3px) rotate(var(--card-tilt, -1deg)); box-shadow: var(--shadow); }
+.postcard .stamp {
+  position: absolute; top: 10px; right: 12px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-radius: 999px; padding: 4px 8px;
+  font-size: 10px; font-weight: 800; letter-spacing: 0.05em;
+}
+.postcard-emoji {
+  font-size: 32px; line-height: 1;
+  margin-bottom: 10px;
+}
+.postcard-title { font-size: 16px; font-weight: 800; margin-bottom: 4px; }
+.postcard-sub { color: var(--ink-soft); font-size: 12px; margin-bottom: 8px; }
+.postcard-memory {
+  font-family: 'Caveat', cursive;
+  font-size: 20px; color: var(--primary-dark);
+  line-height: 1.1;
+  min-height: 22px;
+}
+.postcard-reveal {
+  margin-top: 12px;
+  background: var(--surface-2);
+  border: 1px dashed var(--line-strong);
+  border-radius: 12px;
+  padding: 10px 12px;
+  opacity: 0;
+  transform: translateY(6px);
+  transition: all 0.18s ease;
+  pointer-events: none;
+}
+.postcard:hover .postcard-reveal,
+.postcard.revealed .postcard-reveal {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+.postcard-actions {
+  display: flex; gap: 8px; margin-top: 10px; align-items: center;
+}
+.postcard-actions .btn { flex: 1; justify-content: center; }
+.postcard-edit {
+  background: var(--surface-solid);
+  border: 1px solid var(--line);
+  border-radius: 9px; padding: 4px 6px;
+  font-size: 11px; font-weight: 700; color: var(--ink-soft);
+  cursor: pointer;
+}
+.postcard-edit:hover { color: var(--primary); border-color: var(--primary); }
+
+@media (max-width: 1100px) {
+  .postcard-wall { column-count: 2; }
+}
+@media (max-width: 760px) {
+  .postcard-wall { column-count: 1; }
+  .year-map { width: 100%; }
+}
+
 /* Empty state */
 .empty-state {
   padding: 60px 28px; text-align: center;
@@ -1991,7 +2164,20 @@ function currentTrip() { return state.trips.find(t => t.id === route.tripId); }
 function goHome() { route = { view: "home", tripId: null, tab: "overview" }; render(); }
 function openTrip(id, tab) { route = { view: "trip", tripId: id, tab: tab || "overview" }; render(); }
 function setTab(t) { route.tab = t; render(); }
-function setPastYearFilter(y) { pastYearFilter = y; render(); }
+function setPastYearFilter(y) {
+  pastYearFilter = y;
+  render();
+  requestAnimationFrame(() => scrollPastYearIntoView(y));
+}
+function scrollPastYearIntoView(y) {
+  if (y === "all") {
+    const root = document.getElementById("past-root");
+    if (root) root.scrollIntoView({ behavior: "smooth", block: "start" });
+    return;
+  }
+  const el = document.getElementById(`past-year-${y}`);
+  if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+}
 
 // -------- RENDER --------
 function render() {
@@ -2055,21 +2241,47 @@ function renderHome() {
       </div>
       ${past.length ? (() => {
         const pastYears = [...new Set(past.map(t => (t.startDate || "").slice(0, 4)).filter(Boolean))].sort((a, b) => b - a);
-        const validFilter = pastYears.includes(pastYearFilter) ? pastYearFilter : "all";
-        const filtered = validFilter === "all" ? past : past.filter(t => (t.startDate || "").startsWith(validFilter));
-        const pillsHtml = pastYears.length > 1 ? `
-          <div class="year-pills">
-            <button class="year-pill ${validFilter === 'all' ? 'active' : ''}" onclick="setPastYearFilter('all')">All</button>
-            ${pastYears.map(y => `<button class="year-pill ${validFilter === y ? 'active' : ''}" onclick="setPastYearFilter('${y}')">${y}</button>`).join("")}
-          </div>` : "";
-        return `
-          <div class="section-head" style="margin-top:32px;">
-            <h2>Past <span class="muted">${filtered.length} ${filtered.length === 1 ? "trip" : "trips"}</span></h2>
-            ${pillsHtml}
-          </div>
-          <div class="trip-grid">
-            ${filtered.map(renderTripCard).join("")}
+        const activeYear = pastYears.includes(pastYearFilter) ? pastYearFilter : "all";
+        const yearCounts = pastYears.reduce((acc, y) => {
+          acc[y] = past.filter(t => (t.startDate || "").startsWith(y)).length;
+          return acc;
+        }, {});
+
+        const timelineHtml = `
+          <div class="year-map" role="tablist" aria-label="Past years">
+            <button class="year-pill-mini ${activeYear === 'all' ? 'active' : ''}" onclick="setPastYearFilter('all')">All</button>
+            <div class="year-track">
+              ${pastYears.map(y => `
+                <div class="year-node ${activeYear === y ? 'active' : ''}" onclick="setPastYearFilter('${y}')" role="button">
+                  <div class="year-dot"></div>
+                  <div class="year-label">${y}</div>
+                  <div class="year-count">${yearCounts[y]}</div>
+                </div>`).join("")}
+            </div>
           </div>`;
+
+        const wallHtml = pastYears.map((y, idx) => {
+          const tripsForYear = past.filter(t => (t.startDate || "").startsWith(y));
+          return `
+            <div class="past-year" id="past-year-${y}" data-year="${y}">
+              <div class="past-year-header">${y} · ${tripsForYear.length} trip${tripsForYear.length === 1 ? "" : "s"}</div>
+              ${tripsForYear.map((t, i) => renderPostcard(t, i + idx)).join("")}
+            </div>`;
+        }).join("");
+
+        return `
+          <section class="past-section" id="past-root">
+            <div class="past-head">
+              <div class="past-title">
+                <h2>Past</h2>
+                <span class="muted">${past.length} ${past.length === 1 ? "trip" : "trips"}</span>
+              </div>
+              ${timelineHtml}
+            </div>
+            <div class="postcard-wall">
+              ${wallHtml}
+            </div>
+          </section>`;
       })() : ""}
     `}
   `;
@@ -4717,6 +4929,79 @@ function renderTripCard(t) {
       </button>
     </div>
   `;
+}
+
+function getTripMemoryLine(t) {
+  const line = (t.memoryLine || "").trim();
+  if (line) return line;
+  return (t.destination || "").trim() || "Memory";
+}
+
+function renderPostcard(t, idx) {
+  const dates = (t.startDate || t.endDate)
+    ? `${fmtDate(t.startDate, {month:"short",day:"numeric"})}${t.endDate ? " – " + fmtDate(t.endDate, {month:"short",day:"numeric",year:"numeric"}) : ""}`
+    : "Dates TBD";
+  const peopleCt = (t.travelers || []).length;
+  const totalSpend = (t.expenses || []).reduce((s, e) => s + (parseFloat(e.cost) || 0), 0);
+  const nights = tripDuration(t);
+  const memoryLine = getTripMemoryLine(t);
+  const tilt = ((idx % 3) - 1) * 1.3;
+  return `
+    <article class="postcard" style="--card-tilt:${tilt}deg" onclick="handlePostcardClick(event, '${t.id}')">
+      <div class="stamp">${(t.startDate || "").slice(0,4) || ""}</div>
+      <div class="postcard-emoji">${t.emoji || "🌍"}</div>
+      <div class="postcard-title">${escapeHtml(t.title)}</div>
+      <div class="postcard-sub">${escapeHtml(dates)}</div>
+      <div class="postcard-memory">${escapeHtml(memoryLine)}</div>
+
+      <div class="postcard-reveal">
+        <div class="text-sm">${peopleCt ? peopleCt + " traveler" + (peopleCt === 1 ? "" : "s") : "Travelers TBD"} · ${nights ? nights + " day" + (nights === 1 ? "" : "s") : "Dates TBD"}</div>
+        <div class="text-sm" style="margin-top:4px;">${totalSpend > 0 ? fmtCurrency(totalSpend) + " total" : (t.budget ? fmtCurrency(t.budget) + "/person budget" : "No expenses yet")}</div>
+        <div class="postcard-actions">
+          <button class="btn sm" onclick="openTrip('${t.id}'); event.stopPropagation();">Open trip</button>
+          <button class="postcard-edit" onclick="openMemoryLineEditor('${t.id}'); event.stopPropagation();">✎ Memory</button>
+        </div>
+      </div>
+    </article>
+  `;
+}
+
+function handlePostcardClick(event, tripId) {
+  const card = event.currentTarget;
+  if (event.target.closest(".postcard-actions") || event.target.closest(".postcard-edit")) return;
+  if (card.classList.contains("revealed")) {
+    openTrip(tripId);
+    return;
+  }
+  document.querySelectorAll(".postcard.revealed").forEach(c => c.classList.remove("revealed"));
+  card.classList.add("revealed");
+}
+
+function openMemoryLineEditor(tripId) {
+  if (!guardEdit()) return;
+  const t = (state.trips || []).find(x => x.id === tripId);
+  if (!t) return;
+  const current = (t.memoryLine || "").trim();
+  showModal({
+    title: "Edit memory line",
+    size: "sm",
+    body: `
+      <div class="field">
+        <label>Memory line</label>
+        <input id="memory-line-input" value="${escapeAttr(current)}" placeholder="${escapeAttr(t.destination || 'Memory line')}" />
+      </div>
+    `,
+    actions: [
+      { label: "Cancel", onClick: closeModal },
+      { label: "Save", primary: true, onClick: () => {
+        const v = (document.getElementById("memory-line-input").value || "").trim();
+        t.memoryLine = v;
+        saveState();
+        closeModal();
+        render();
+      }}
+    ]
+  });
 }
 </script>
 </body>
