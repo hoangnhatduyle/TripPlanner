@@ -900,7 +900,7 @@ input, textarea, select { font-family: inherit; }
 .t-wrap { overflow-x: auto; border-radius: 12px; border: 1px solid var(--line); background: var(--surface-solid); }
 table.t {
   width: 100%; border-collapse: collapse; font-size: 14px;
-  min-width: 600px;
+  min-width: 860px;
 }
 table.t th, table.t td {
   text-align: left; padding: 10px 12px;
@@ -922,6 +922,15 @@ table.t td input, table.t td textarea, table.t td select {
 }
 table.t .col-note { min-width: 220px; width: 28%; }
 table.t td.col-note textarea { min-height: 56px; resize: vertical; line-height: 1.4; }
+table.t .col-name { min-width: 160px; }
+table.t .col-cat  { min-width: 120px; }
+table.t .col-cost { min-width: 90px; }
+table.t .col-date { min-width: 120px; }
+table.t .col-paid { min-width: 130px; }
+table.t .col-per  { min-width: 110px; }
+table.t .col-item { min-width: 180px; }
+table.t .col-status { min-width: 100px; width: 110px; }
+table.t .col-link { min-width: 140px; }
 table.t td input:hover, table.t td textarea:hover, table.t td select:hover {
   border-color: var(--line);
 }
@@ -1155,15 +1164,20 @@ table.t tfoot td {
 .slot-res-badge.booked   { background: #d4edda; color: #1a6630; }
 .slot-res-badge.pending  { background: #fff3cd; color: #856404; }
 .slot-res-badge.cancelled { background: #f8d7da; color: #842029; }
+/* Slot action button bar (res-link + mobile-edit) */
+.slot-btns {
+  position: absolute; top: 4px; right: 4px;
+  display: flex; flex-direction: row-reverse; gap: 3px; align-items: center;
+}
 .slot-res-link-btn {
-  display: none; position: absolute; top: 4px; right: 4px;
+  display: none;
   background: var(--surface); border: 1px solid var(--line);
-  border-radius: 5px; padding: 1px 4px; font-size: 10px;
+  border-radius: 5px; padding: 2px 5px; font-size: 10px;
   cursor: pointer; color: var(--ink-soft); line-height: 1.4;
   transition: all 0.15s;
 }
-.slot-res-link-btn.linked { display: block; color: var(--primary); border-color: var(--primary); }
-.itin-cell.slot.filled:hover .slot-res-link-btn { display: block; }
+.slot-res-link-btn.linked { display: inline-flex; color: var(--primary); border-color: var(--primary); }
+.itin-cell.slot.filled:hover .slot-res-link-btn { display: inline-flex; }
 /* Address field inside itinerary slot */
 .slot-addr-input {
   width: 100%; margin-top: 5px; padding: 2px 0;
@@ -1188,7 +1202,7 @@ table.t tfoot td {
 .itin-cell.slot.filled:hover .slot-addr-clear { opacity: 1; }
 /* Mobile: tap target for activity dialog */
 .itin-cell.slot.filled .mobile-edit-btn {
-  display: none; position: absolute; top: 4px; right: 4px;
+  display: none;
   width: 22px; height: 22px; border-radius: 6px;
   background: var(--primary); color: white; border: none;
   font-size: 11px; cursor: pointer; place-items: center;
@@ -1197,6 +1211,33 @@ table.t tfoot td {
   .itin-cell.slot.filled .drag-handle { display: none !important; }
   .itin-cell.slot.filled .mobile-edit-btn { display: grid; }
 }
+/* Mobile day navigation */
+.itin-day-nav {
+  display: none;
+  align-items: center; justify-content: space-between;
+  margin-bottom: 12px; gap: 8px;
+}
+@media (max-width: 600px) { .itin-day-nav { display: flex; } }
+.itin-day-nav-btn {
+  display: flex; align-items: center;
+  padding: 7px 11px; border-radius: 9px;
+  border: 1px solid var(--line); background: var(--surface-solid);
+  font-size: 16px; cursor: pointer; color: var(--ink);
+  transition: background 0.15s;
+}
+.itin-day-nav-btn:hover:not(:disabled) { background: var(--surface-2); }
+.itin-day-nav-btn:disabled { opacity: 0.3; cursor: default; }
+.itin-day-nav-center {
+  display: flex; flex-direction: column; align-items: center; gap: 3px; flex: 1;
+}
+.itin-day-label { font-size: 14px; font-weight: 700; color: var(--primary-dark); line-height: 1.2; }
+.itin-day-date-label { font-size: 11px; color: var(--ink-soft); }
+.itin-day-summary-btn {
+  margin-top: 3px; padding: 4px 10px; border-radius: 7px;
+  border: 1px solid var(--line); background: var(--surface-2);
+  font-size: 11px; cursor: pointer; color: var(--ink-soft);
+}
+.itin-day-summary-btn:hover { background: var(--primary-soft); border-color: var(--primary); color: var(--primary-dark); }
 /* Activity time dialog */
 .activity-time-form { display: flex; flex-direction: column; gap: 14px; }
 .activity-time-form .field-row {
@@ -1220,13 +1261,28 @@ table.t tfoot td {
 .res-status.pending { background: #fff4d6; color: #946800; }
 .res-status.booked { background: #d6f5e0; color: #1d6e3a; }
 .res-status.cancelled { background: #fadcd9; color: #a02b25; }
+.res-status-cell { position: relative; }
+.res-status-select {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  opacity: 0; cursor: pointer; z-index: 1;
+}
+.res-status { cursor: pointer; }
+.res-open-btn {
+  display: none;
+  padding: 4px 10px; border-radius: 6px;
+  background: var(--primary); color: white;
+  font-size: 12px; font-weight: 600;
+  text-decoration: none; white-space: nowrap;
+}
+.res-open-btn:hover { opacity: 0.85; }
+.res-link-input { display: block; }
 
 /* ===========================================================
    NOTES – sticky board
    =========================================================== */
-.sticky-board { display: flex; flex-wrap: wrap; gap: 16px; }
+.sticky-board { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; max-width: 100%; }
 .sticky-note {
-  position: relative; width: 200px;
+  position: relative; width: 100%;
   border-radius: 4px;
   box-shadow: 2px 3px 10px rgba(0,0,0,.13);
   padding: 28px 12px 12px;
@@ -1245,7 +1301,7 @@ table.t tfoot td {
 }
 .sticky-note .note-remove:hover { color: #ef4444; }
 .sticky-add {
-  width: 200px; height: 170px;
+  width: 100%; height: 170px;
   border: 2px dashed var(--line); border-radius: 4px;
   background: none; cursor: pointer;
   display: flex; align-items: center; justify-content: center;
@@ -1855,6 +1911,9 @@ table.t tfoot td {
   .year-label { font-size: 11px; }
   .year-count { font-size: 9px; padding: 2px 6px; }
   .share-tabs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .res-link-input { display: none; }
+  .res-open-btn { display: inline-flex; align-items: center; }
+  .sticky-board { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 480px) {
@@ -1945,6 +2004,50 @@ const SPLIT_METHODS = [
   { id: "shares",  label: "Shares",  icon: "≡",       desc: "Each traveler pays in proportion to assigned shares. Use when one traveler owes 2× another, etc." },
   { id: "adjust",  label: "Adjust",  icon: "+/−",     desc: "Equal split, then add or subtract a dollar amount per traveler. Use for one-off favors or fines." }
 ];
+
+// -------- TIME SLOT HELPERS --------
+function parseTime12(str) {
+  const m = (str || "").match(/(\d+):(\d+)\s*(AM|PM)/i);
+  if (!m) return null;
+  let h = parseInt(m[1]), min = parseInt(m[2]);
+  const p = m[3].toUpperCase();
+  if (p === 'PM' && h !== 12) h += 12;
+  if (p === 'AM' && h === 12) h = 0;
+  return h * 60 + min;
+}
+function formatTime12(minutes) {
+  const h24 = Math.floor(minutes / 60) % 24;
+  const min = minutes % 60;
+  const p = h24 < 12 ? 'AM' : 'PM';
+  const h12 = h24 % 12 === 0 ? 12 : h24 % 12;
+  return `${h12}:${String(min).padStart(2,'0')} ${p}`;
+}
+function nextTimeStr(timeStr) {
+  const min = parseTime12(timeStr);
+  if (min === null) return timeStr;
+  return formatTime12(min + 60);
+}
+// Return the label for an exclusive-end slot index (slots[idx] or computed next time)
+function slotEndLabel(slots, idx) {
+  return idx < slots.length ? slots[idx] : nextTimeStr(slots[slots.length - 1]);
+}
+// Generate all half-hour time strings for the range picker dropdowns
+function allHalfHourTimes() {
+  const times = [];
+  for (let h = 0; h < 24; h++) {
+    for (let m = 0; m < 60; m += 30) times.push(formatTime12(h * 60 + m));
+  }
+  return times;
+}
+// Generate slot array from inclusive start to inclusive last-slot end
+function generateSlotsFromRange(startStr, lastStr, intervalMin) {
+  const start = parseTime12(startStr);
+  const last = parseTime12(lastStr);
+  if (start === null || last === null || last < start) return [];
+  const slots = [];
+  for (let m = start; m <= last; m += intervalMin) slots.push(formatTime12(m));
+  return slots;
+}
 
 const TIME_SLOTS_DEFAULT = [
   "7:00 AM","8:00 AM","9:00 AM","10:00 AM","11:00 AM","12:00 PM",
@@ -2333,7 +2436,7 @@ function currentTrip() { return state.trips.find(t => t.id === route.tripId); }
 
 // -------- ROUTING --------
 function goHome() { route = { view: "home", tripId: null, tab: "overview" }; render(); }
-function openTrip(id, tab) { route = { view: "trip", tripId: id, tab: tab || "overview" }; render(); }
+function openTrip(id, tab) { itinMobileDay = 0; route = { view: "trip", tripId: id, tab: tab || "overview" }; render(); }
 function setTab(t) { route.tab = t; render(); }
 function setPastYearFilter(y) {
   pastYearFilter = y;
@@ -3019,48 +3122,100 @@ function computeMyData(t) {
 }
 
 // -------- ITINERARY TAB --------
-function renderItinerary(t) {
-  const dayCount = t.itinerary.length;
+let itinMobileDay = 0;
+
+function navItinDay(delta) {
+  const t = currentTrip(); if (!t) return;
+  itinMobileDay = Math.max(0, Math.min(t.itinerary.length - 1, itinMobileDay + delta));
+  render();
+}
+
+function showDaySummary() {
+  const t = currentTrip(); if (!t) return;
+  const dIdx = Math.max(0, Math.min(t.itinerary.length - 1, itinMobileDay));
+  const day = t.itinerary[dIdx];
   const slots = t.timeSlots || TIME_SLOTS_DEFAULT;
   const startDate = parseDate(t.startDate);
-  const totalCols = 1 + dayCount; // time col + day cols
-  const totalRows = 1 + slots.length; // header row + slot rows
+  let dayLabel = `Day ${dIdx + 1}`;
+  if (startDate) {
+    const dd = new Date(startDate); dd.setDate(dd.getDate() + dIdx);
+    dayLabel = dd.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
+  }
+  const activities = [];
+  const covered = new Set();
+  slots.forEach((time, sIdx) => {
+    if (covered.has(sIdx)) return;
+    const slot = day.slots[sIdx];
+    if (!slot || !slot.activity?.trim()) return;
+    const span = Math.min(slot.span || 1, slots.length - sIdx);
+    for (let k = 1; k < span; k++) covered.add(sIdx + k);
+    const timeLabel = span > 1 ? `${time} – ${slotEndLabel(slots, sIdx + span)}` : time;
+    activities.push({ time: timeLabel, activity: slot.activity, address: slot.address });
+  });
+  const content = activities.length
+    ? activities.map(a => `
+        <div style="display:flex;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);">
+          <div style="min-width:100px;font-size:11px;color:var(--ink-soft);font-weight:600;font-variant-numeric:tabular-nums;padding-top:2px;">${a.time}</div>
+          <div>
+            <div style="font-size:14px;font-weight:600;">${escapeHtml(a.activity)}</div>
+            ${a.address ? `<div style="font-size:11px;color:var(--ink-soft);margin-top:3px;">📍 ${escapeHtml(a.address)}</div>` : ''}
+          </div>
+        </div>`).join('')
+    : `<p style="color:var(--ink-soft);text-align:center;padding:24px 0;">No activities planned for this day yet.</p>`;
+  const theme = day.theme ? ` · ${day.theme}` : '';
+  showModal({
+    title: `${escapeHtml(dayLabel)}${escapeHtml(theme)}`,
+    body: `<div style="max-height:65vh;overflow-y:auto;">${content}</div>`,
+    actions: [{ label: 'Close', primary: true, onClick: closeModal }],
+  });
+}
 
-  // Flat CSS Grid: columns = time + days, rows = header + slots
-  const gridStyle = `grid-template-columns: 100px repeat(${dayCount}, minmax(160px, 1fr)); grid-template-rows: auto repeat(${slots.length}, minmax(46px, auto));`;
+function renderItinerary(t) {
+  const slots = t.timeSlots || TIME_SLOTS_DEFAULT;
+  const startDate = parseDate(t.startDate);
+  const isMobile = window.innerWidth <= 600;
+
+  // Clamp mobile day index
+  itinMobileDay = Math.max(0, Math.min(t.itinerary.length - 1, itinMobileDay));
+
+  // On mobile show one day at a time; on desktop show all
+  const displayDayIndices = isMobile ? [itinMobileDay] : t.itinerary.map((_, i) => i);
+  const displayDayCount = displayDayIndices.length;
+
+  const gridStyle = `grid-template-columns: 80px repeat(${displayDayCount}, minmax(160px, 1fr)); grid-template-rows: auto repeat(${slots.length}, minmax(46px, auto));`;
 
   let cells = "";
 
   // Header row (grid row 1)
   cells += `<div class="itin-cell time itin-time-hdr" style="grid-row:1; grid-column:1;">Time</div>`;
-  t.itinerary.forEach((d, i) => {
+  displayDayIndices.forEach((dIdx, colPos) => {
+    const d = t.itinerary[dIdx];
     let dayDate = "";
-    if (startDate) { const dd = new Date(startDate); dd.setDate(dd.getDate() + i); dayDate = dd.toLocaleDateString(undefined, { weekday:"short", month:"short", day:"numeric" }); }
+    if (startDate) { const dd = new Date(startDate); dd.setDate(dd.getDate() + dIdx); dayDate = dd.toLocaleDateString(undefined, { weekday:"short", month:"short", day:"numeric" }); }
     cells += `
-      <div class="itin-cell daycol" style="grid-row:1; grid-column:${i+2};">
-        <div class="dnum">Day ${i+1}</div>
+      <div class="itin-cell daycol" style="grid-row:1; grid-column:${colPos+2};">
+        <div class="dnum">Day ${dIdx+1}</div>
         ${dayDate ? `<div class="ddate">${dayDate}</div>`:""}
-        <input class="theme-in" value="${escapeHtml(d.theme||"")}" placeholder="Day theme..." onchange="updateDayTheme(${i}, this.value)" />
+        <input class="theme-in" value="${escapeHtml(d.theme||"")}" placeholder="Day theme..." onchange="updateDayTheme(${dIdx}, this.value)" />
       </div>`;
   });
 
-  // Slot rows: for each day, track which slots are covered by a span
-  t.itinerary.forEach((d, dIdx) => {
+  // Slot rows: for each displayed day
+  displayDayIndices.forEach((dIdx, colPos) => {
+    const d = t.itinerary[dIdx];
     const covered = new Set();
     slots.forEach((time, sIdx) => {
       if (covered.has(sIdx)) return;
       if (!d.slots[sIdx]) d.slots[sIdx] = { time, activity: "" };
       const slot = d.slots[sIdx];
       const v = slot.activity || "";
-      const span = Math.min(slot.span || 1, slots.length - sIdx); // clamp
-      // Mark subsequent slots as covered
+      const span = Math.min(slot.span || 1, slots.length - sIdx);
       for (let k = 1; k < span; k++) covered.add(sIdx + k);
 
       const gridRow = span > 1 ? `grid-row: ${sIdx+2} / span ${span}` : `grid-row: ${sIdx+2}`;
-      const gridCol = `grid-column: ${dIdx+2}`;
-      // Always show time at top of filled block; end time = next slot after last covered (Teams style)
-      const endSlot = slots[sIdx + span] ?? slots[sIdx + span - 1];
-      const spanLabel = v ? (span > 1 ? `${slots[sIdx]} – ${endSlot}` : slots[sIdx]) : '';
+      const gridCol = `grid-column: ${colPos+2}`;
+      // Exclusive end label — matches what openActivityTimeDialog shows
+      const spanLabel = v ? (span > 1 ? `${slots[sIdx]} – ${slotEndLabel(slots, sIdx + span)}` : slots[sIdx]) : '';
 
       const linkedResId = slot.reservationId || "";
       const linkedRes = linkedResId ? (t.reservations || []).find(r => r.id === linkedResId) : null;
@@ -3077,7 +3232,6 @@ function renderItinerary(t) {
 
       const addr = slot.address || '';
       const mapsUrl = addr ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(addr)}` : '';
-      // No address yet → show input for entry. Address set → show link only (plus clear btn in edit mode).
       const addrInput = v && isEditing() && !addr ? `
         <input class="slot-addr-input" value="" placeholder="📍 Add address..."
                onchange="updateSlotField(${dIdx},${sIdx},'address',this.value)"
@@ -3101,9 +3255,8 @@ function renderItinerary(t) {
           ${addrLink}
           ${resBadge}
         </div>
-        ${resLinkBtn}
         ${v ? `<div class="drag-handle" onmousedown="startSlotDrag(event, ${dIdx}, ${sIdx})"></div>` : ''}
-        ${v ? `<button class="mobile-edit-btn" onclick="openActivityTimeDialog(${dIdx}, ${sIdx})" title="Edit time">⏱</button>` : ''}
+        ${v ? `<div class="slot-btns">${resLinkBtn}<button class="mobile-edit-btn" onclick="openActivityTimeDialog(${dIdx}, ${sIdx})" title="Edit time">⏱</button></div>` : ''}
       </div>`;
     });
   });
@@ -3113,6 +3266,20 @@ function renderItinerary(t) {
     cells += `<div class="itin-cell time" style="grid-row:${sIdx+2}; grid-column:1;">${time}</div>`;
   });
 
+  // Mobile day navigation bar
+  let mobileNavDateLabel = "";
+  if (startDate) { const dd = new Date(startDate); dd.setDate(dd.getDate() + itinMobileDay); mobileNavDateLabel = dd.toLocaleDateString(undefined, { weekday:"short", month:"short", day:"numeric" }); }
+  const mobileNav = `
+    <div class="itin-day-nav">
+      <button class="itin-day-nav-btn" onclick="navItinDay(-1)" ${itinMobileDay === 0 ? "disabled" : ""}>‹</button>
+      <div class="itin-day-nav-center">
+        <div class="itin-day-label">Day ${itinMobileDay+1} of ${t.itinerary.length}</div>
+        ${mobileNavDateLabel ? `<div class="itin-day-date-label">${mobileNavDateLabel}</div>` : ''}
+        <button class="itin-day-summary-btn" onclick="showDaySummary()">📋 Day summary</button>
+      </div>
+      <button class="itin-day-nav-btn" onclick="navItinDay(1)" ${itinMobileDay === t.itinerary.length - 1 ? "disabled" : ""}>›</button>
+    </div>`;
+
   return `
     <div class="panel">
       <div class="panel-head">
@@ -3121,7 +3288,8 @@ function renderItinerary(t) {
           <button class="btn sm" onclick="openTimeSlotsEditor()">⏱ Edit time slots</button>
         </div>
       </div>
-      <div class="panel-sub">Tap any cell to add an activity. Drag the bottom edge to span multiple hours. On mobile, tap ⏱ to set duration.</div>
+      <div class="panel-sub no-print">Tap any cell to add an activity. Drag the bottom edge to span multiple hours. On mobile, tap ⏱ to set duration.</div>
+      ${mobileNav}
       <div class="itin-grid-wrap">
         <div class="itin-grid" style="${gridStyle}">
           ${cells}
@@ -3212,23 +3380,74 @@ function updateSlot(dIdx, sIdx, v) {
 function openTimeSlotsEditor() {
   if (!guardEdit()) return;
   const t = currentTrip();
-  const current = (t.timeSlots || TIME_SLOTS_DEFAULT).join("\n");
+  const current = t.timeSlots || TIME_SLOTS_DEFAULT;
+  const firstSlot = current[0] || "7:00 AM";
+  const lastSlot = current[current.length - 1] || "11:00 PM";
+
+  // Detect interval from current slots
+  let detectedInterval = 60;
+  if (current.length >= 2) {
+    const a = parseTime12(current[0]), b = parseTime12(current[1]);
+    if (a !== null && b !== null && b > a) detectedInterval = b - a;
+  }
+
+  const halfHours = allHalfHourTimes();
+  const timeOpts = (sel) => halfHours.map(h => `<option${h===sel?" selected":""}>${h}</option>`).join("");
+
+  function buildPreview() {
+    const start = document.getElementById('tse-start')?.value || firstSlot;
+    const last = document.getElementById('tse-last')?.value || lastSlot;
+    const iv = parseInt(document.getElementById('tse-interval')?.value || 60);
+    const gen = generateSlotsFromRange(start, last, iv);
+    const el = document.getElementById('tse-preview');
+    if (el) el.textContent = gen.length
+      ? `${gen.length} slots: ${gen[0]} → ${gen[gen.length-1]}`
+      : 'No slots — check start/end times';
+  }
+
   showModal({
-    title: "Edit time slots",
+    title: "Time slots",
+    size: "sm",
     body: `
-      <div class="field">
-        <label>One time per line (e.g. "8:00 AM"). Slots apply to every day.</label>
-        <textarea id="ts-input" rows="10" style="font-family:monospace;font-size:13px;">${escapeHtml(current)}</textarea>
-        <div class="hint">Tip: add half-hour slots if you want finer granularity.</div>
+      <div class="activity-time-form">
+        <p style="font-size:13px;color:var(--ink-soft);margin:0 0 4px;">Choose the time range and interval. All days share the same slots.</p>
+        <div class="field-row">
+          <label>First slot</label>
+          <select id="tse-start" oninput="(function(){const a=allHalfHourTimes(),s=document.getElementById('tse-start').value,l=document.getElementById('tse-last').value;if(a.indexOf(l)<=a.indexOf(s)){const ni=Math.min(a.indexOf(s)+2,a.length-1);document.getElementById('tse-last').value=a[ni];}document.getElementById('tse-preview').textContent=''+(function(){const g=generateSlotsFromRange(s,document.getElementById('tse-last').value,parseInt(document.getElementById('tse-interval').value));return g.length?g.length+' slots: '+g[0]+' → '+g[g.length-1]:'No slots';})();})()">
+            ${timeOpts(firstSlot)}
+          </select>
+        </div>
+        <div class="field-row">
+          <label>Last slot</label>
+          <select id="tse-last" oninput="document.getElementById('tse-preview').textContent=(function(){const g=generateSlotsFromRange(document.getElementById('tse-start').value,this.value,parseInt(document.getElementById('tse-interval').value));return g.length?g.length+' slots: '+g[0]+' → '+g[g.length-1]:'No slots';}).call(this)">
+            ${timeOpts(lastSlot)}
+          </select>
+        </div>
+        <div class="field-row">
+          <label>Interval</label>
+          <select id="tse-interval" oninput="document.getElementById('tse-preview').textContent=(function(){const g=generateSlotsFromRange(document.getElementById('tse-start').value,document.getElementById('tse-last').value,parseInt(this.value));return g.length?g.length+' slots: '+g[0]+' → '+g[g.length-1]:'No slots';}).call(this)">
+            <option value="30" ${detectedInterval===30?"selected":""}>Every 30 minutes</option>
+            <option value="60" ${detectedInterval===60?"selected":""}>Every 1 hour</option>
+            <option value="120" ${detectedInterval===120?"selected":""}>Every 2 hours</option>
+          </select>
+        </div>
+        <div id="tse-preview" style="font-size:12px;color:var(--ink-soft);padding:6px 0;"></div>
       </div>
     `,
+    onOpen: () => {
+      const gen = generateSlotsFromRange(firstSlot, lastSlot, detectedInterval);
+      const el = document.getElementById('tse-preview');
+      if (el) el.textContent = gen.length ? `${gen.length} slots: ${gen[0]} → ${gen[gen.length-1]}` : 'No slots';
+    },
     actions: [
       { label: "Cancel", onClick: closeModal },
       { label: "Save", primary: true, onClick: () => {
-        const slots = document.getElementById("ts-input").value.split("\n").map(s=>s.trim()).filter(Boolean);
-        if (!slots.length) return alert("Need at least one time slot.");
+        const start = document.getElementById('tse-start').value;
+        const last = document.getElementById('tse-last').value;
+        const iv = parseInt(document.getElementById('tse-interval').value);
+        const slots = generateSlotsFromRange(start, last, iv);
+        if (!slots.length) return alert("No slots generated — make sure first slot is before last slot.");
         t.timeSlots = slots;
-        // Resize each day's slots, preserving span data
         t.itinerary.forEach(d => {
           const oldMap = {};
           (d.slots||[]).forEach(s => { oldMap[s.time] = { activity: s.activity, span: s.span }; });
@@ -3341,21 +3560,20 @@ function openActivityTimeDialog(dIdx, sIdx) {
     `<option value="${i}" ${i===sIdx?"selected":""}>${s}</option>`
   ).join("");
 
-  // Build end time options (from start to end of day)
-  const maxEnd = slots.length - 1;
-  const currentEndIdx = sIdx + currentSpan - 1;
-  const endOptions = slots.map((s, i) => {
-    if (i < sIdx) return "";
-    // Check if slots between sIdx+1 and i have content
+  // Build end time options — exclusive end (matches what the calendar displays: "7AM – 11AM")
+  // currentEndIdx = sIdx + span (first slot AFTER the event, same as the display)
+  const currentEndIdx = sIdx + currentSpan;
+  const endOpts = [];
+  for (let i = sIdx + 1; i <= slots.length; i++) {
     let blocked = false;
-    for (let k = sIdx + 1; k <= i; k++) {
-      if (day.slots[k] && day.slots[k].activity && day.slots[k].activity.trim()) {
-        blocked = true; break;
-      }
+    for (let k = sIdx + 1; k < i; k++) {
+      if (day.slots[k] && day.slots[k].activity && day.slots[k].activity.trim()) { blocked = true; break; }
     }
-    if (blocked) return "";
-    return `<option value="${i}" ${i===currentEndIdx?"selected":""}>${s}</option>`;
-  }).join("");
+    if (blocked) break;
+    const label = slotEndLabel(slots, i);
+    endOpts.push(`<option value="${i}" ${i===currentEndIdx?"selected":""}>${label}</option>`);
+  }
+  const endOptions = endOpts.join("");
 
   showModal({
     title: `${escapeHtml(slot.activity || "Activity")}`,
@@ -3383,7 +3601,8 @@ function openActivityTimeDialog(dIdx, sIdx) {
         const newActivity = document.getElementById("atd-activity").value;
         const newStart = parseInt(document.getElementById("atd-start").value);
         const newEnd = parseInt(document.getElementById("atd-end").value);
-        const newSpan = Math.max(1, newEnd - newStart + 1);
+        // newEnd is exclusive (same as display), so span = newEnd - newStart
+        const newSpan = Math.max(1, newEnd - newStart);
 
         // If start changed, move the activity
         if (newStart !== sIdx) {
@@ -3509,13 +3728,13 @@ function renderExpenses(t, printMode) {
       : (participants.length > 0 ? fmtCurrency(perPerson) : "$0.00");
     return `
     <tr>
-      <td><input value="${escapeHtml(e.name||"")}" onchange="updateExpense(${i},'name',this.value)" placeholder="Expense" /></td>
-      <td><select onchange="updateExpense(${i},'category',this.value)">
+      <td class="col-name"><input value="${escapeHtml(e.name||"")}" onchange="updateExpense(${i},'name',this.value)" placeholder="Expense" /></td>
+      <td class="col-cat"><select onchange="updateExpense(${i},'category',this.value)">
         ${EXPENSE_CATEGORIES.map(c => `<option ${e.category===c?"selected":""}>${c}</option>`).join("")}
       </select></td>
-      <td class="num"><input type="number" step="0.01" value="${e.cost||""}" onchange="updateExpense(${i},'cost',parseFloat(this.value)||0)" /></td>
-      <td><input type="date" value="${e.date||""}" onchange="updateExpense(${i},'date',this.value)" /></td>
-      <td>
+      <td class="col-cost num"><input type="number" step="0.01" value="${e.cost||""}" onchange="updateExpense(${i},'cost',parseFloat(this.value)||0)" /></td>
+      <td class="col-date"><input type="date" value="${e.date||""}" onchange="updateExpense(${i},'date',this.value)" /></td>
+      <td class="col-paid">
         <button class="payer-btn" onclick="openPayerDialog(${i})" title="Select who paid & settle up">
           ${(e.paidBy||[]).length ? (e.paidBy||[]).map(p => `<span class="payer-tag">${escapeHtml(p)}</span>`).join("") : '<span class="payer-placeholder">Select payer</span>'}
           ${(() => {
@@ -3530,8 +3749,8 @@ function renderExpenses(t, printMode) {
           })()}
         </button>
       </td>
-      <td><input value="${escapeHtml(e.note||"")}" onchange="updateExpense(${i},'note',this.value)" placeholder="" /></td>
-      <td>
+      <td class="col-note"><input value="${escapeHtml(e.note||"")}" onchange="updateExpense(${i},'note',this.value)" placeholder="" /></td>
+      <td class="col-per">
         <button class="split-cell-btn" onclick="openSplitEditor(${i})" title="Customize split">
           ${splitLabel} ${!balanced && cost>0 ? '<span style="color:#c0392b;" title="Allocation doesn\'t match cost">⚠</span>' : ''}
         </button>
@@ -3569,8 +3788,8 @@ function renderExpenses(t, printMode) {
         <div class="t-wrap">
           <table class="t">
             <thead><tr>
-              <th>Expense</th><th>Category</th><th style="text-align:right;">Cost</th>
-              <th>Date</th><th>Paid by</th><th>Note</th><th>Per Person</th>
+              <th class="col-name">Expense</th><th class="col-cat">Category</th><th class="col-cost" style="text-align:right;">Cost</th>
+              <th class="col-date">Date</th><th class="col-paid">Paid by</th><th class="col-note">Note</th><th class="col-per">Per Person</th>
               <th class="no-print"></th>
             </tr></thead>
             <tbody>${rows || `<tr><td colspan="8" style="padding:20px 12px;color:var(--ink-soft);text-align:center;">No expenses involve <strong>${escapeHtml(me)}</strong> yet.</td></tr>`}</tbody>
@@ -3586,7 +3805,7 @@ function renderExpenses(t, printMode) {
         </div>
 
         ${travelers.length >= 1 ? `
-          <h4 style="margin:18px 0 0;">Per-person breakdown</h4>
+          <h4 style="margin:18px 0 0; margin-bottom: 18px;">Per-person breakdown</h4>
           <div class="panel-sub">Compares each person's share of expenses vs. what they've paid. Click a person to see their expense details.</div>
           <div class="split-summary">
             ${travelers.map(p => {
@@ -4314,19 +4533,22 @@ function renderReservations(t, printMode) {
   const rs = t.reservations || [];
   const rows = rs.map((r, i) => `
     <tr>
-      <td><input value="${escapeHtml(r.name||"")}" onchange="updateRes(${i},'name',this.value)" placeholder="What to book" /></td>
-      <td>
-        <select onchange="updateRes(${i},'status',this.value)">
-          <option value="pending" ${r.status==="pending"?"selected":""}>Pending</option>
-          <option value="booked" ${r.status==="booked"?"selected":""}>Booked</option>
-          <option value="cancelled" ${r.status==="cancelled"?"selected":""}>Cancelled</option>
-        </select>
-        <span class="res-status ${r.status||"pending"}" style="margin-top:4px;">${(r.status||"pending")}</span>
+      <td class="col-item"><input value="${escapeHtml(r.name||"")}" onchange="updateRes(${i},'name',this.value)" placeholder="What to book" /></td>
+      <td class="col-status">
+        <div class="res-status-cell">
+          <select class="res-status-select" onchange="updateRes(${i},'status',this.value)" id="res-sel-${i}">
+            <option value="pending" ${r.status==="pending"?"selected":""}>Pending</option>
+            <option value="booked" ${r.status==="booked"?"selected":""}>Booked</option>
+            <option value="cancelled" ${r.status==="cancelled"?"selected":""}>Cancelled</option>
+          </select>
+          <span class="res-status ${r.status||"pending"}" onclick="document.getElementById('res-sel-${i}').click()">${(r.status||"pending")}</span>
+        </div>
       </td>
       <td><input type="datetime-local" value="${r.dueDate||""}" onchange="updateRes(${i},'dueDate',this.value)" style="font-size:12px;" /></td>
       <td><input value="${escapeHtml(r.confNum||"")}" onchange="updateRes(${i},'confNum',this.value)" placeholder="—" /></td>
-      <td><input value="${escapeHtml(r.link||"")}" onchange="updateRes(${i},'link',this.value)" placeholder="https://..." />
-        ${r.link ? `<a href="${escapeHtml(r.link)}" target="_blank" rel="noopener" class="text-sm" style="color:var(--primary);">Open ↗</a>` : ""}
+      <td class="col-link">
+        <input class="res-link-input" value="${escapeHtml(r.link||"")}" onchange="updateRes(${i},'link',this.value)" placeholder="https://..." />
+        ${r.link ? `<a href="${escapeHtml(r.link)}" target="_blank" rel="noopener" class="res-open-btn">Open ↗</a>` : ""}
       </td>
       <td class="col-note"><textarea rows="2" onchange="updateRes(${i},'note',this.value)">${escapeHtml(r.note||"")}</textarea></td>
       <td class="row-actions no-print">
@@ -4354,8 +4576,8 @@ function renderReservations(t, printMode) {
         <div class="t-wrap">
           <table class="t">
             <thead><tr>
-              <th>Item</th><th>Status</th><th>Booking time</th><th>Confirm #</th>
-              <th>Link</th><th class="col-note">Note</th><th class="no-print"></th>
+              <th class="col-item">Item</th><th class="col-status">Status</th><th>Booking time</th><th>Confirm #</th>
+              <th class="col-link">Link</th><th class="col-note">Note</th><th class="no-print"></th>
             </tr></thead>
             <tbody>${rows}</tbody>
           </table>
@@ -4555,7 +4777,7 @@ function selectNtEmoji(btn) {
 }
 
 // -------- MODAL --------
-function showModal({ title, body, actions, size }) {
+function showModal({ title, body, actions, size, onOpen }) {
   const root = document.getElementById("modal-root");
   root.innerHTML = `
     <div class="modal-bg" onclick="if(event.target===this) closeModal()">
@@ -4576,6 +4798,7 @@ function showModal({ title, body, actions, size }) {
   (actions||[]).forEach((a, i) => {
     root.querySelector(`[data-aidx="${i}"]`).onclick = a.onClick;
   });
+  if (onOpen) onOpen();
 }
 function closeModal() { document.getElementById("modal-root").innerHTML = ""; }
 
