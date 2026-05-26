@@ -1205,11 +1205,11 @@ table.t tfoot td {
   display: none;
   width: 22px; height: 22px; border-radius: 6px;
   background: var(--primary); color: white; border: none;
-  font-size: 11px; cursor: pointer; place-items: center;
+  font-size: 13px; cursor: pointer; line-height: 1;
 }
 @media (hover: none) and (pointer: coarse) {
   .itin-cell.slot.filled .drag-handle { display: none !important; }
-  .itin-cell.slot.filled .mobile-edit-btn { display: grid; }
+  .itin-cell.slot.filled .mobile-edit-btn { display: flex; align-items: center; justify-content: center; }
   /* Always show res-link-btn on touch (only exists in DOM when editing).
      Since the button is already visible before any tap, it can't snap into the tap
      target mid-gesture — eliminating the hover-intercept bug. */
@@ -1948,6 +1948,13 @@ table.t tfoot td {
   .share-link-row { gap: 6px; }
   .share-link-input { font-size: 12px; padding: 8px 10px; }
   .share-link-row .btn.sm { padding: 6px 8px; }
+  /* Tabs: tighter on small screens */
+  .tab { padding: 8px 10px; font-size: 13px; }
+  .tab svg { width: 13px; height: 13px; }
+  /* Postcard action buttons: stack vertically to prevent overflow */
+  .postcard-actions { flex-direction: column; gap: 5px; }
+  .postcard-actions .btn { flex: none; width: 100%; justify-content: center; }
+  .postcard-edit { width: 100%; text-align: center; box-sizing: border-box; }
 }
 
 @media (max-width: 360px) {
