@@ -520,9 +520,36 @@ input, textarea, select { font-family: inherit; }
   border-radius: 999px;
   padding: 10px 14px;
   overflow-x: auto;
+  position: relative;
+  max-width: 100%;
+  min-width: 0;
+  scroll-snap-type: x mandatory;
+  scroll-padding: 14px;
+  -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
 }
 .year-map::-webkit-scrollbar { display: none; }
+.year-map::after {
+  content: "";
+  position: absolute;
+  right: 6px; top: 6px; bottom: 6px;
+  width: 28px;
+  background: linear-gradient(90deg, rgba(255,255,255,0), var(--surface-solid));
+  pointer-events: none;
+  border-radius: 999px;
+}
+.year-map::before {
+  content: "";
+  position: absolute;
+  right: 12px; bottom: 6px;
+  font-size: 10px; font-weight: 700;
+  color: var(--ink-soft);
+  background: rgba(255,255,255,0.7);
+  border-radius: 999px;
+  padding: 2px 8px;
+  opacity: 0;
+  pointer-events: none;
+}
 .year-pill-mini {
   border-radius: 999px;
   padding: 6px 10px;
@@ -532,6 +559,7 @@ input, textarea, select { font-family: inherit; }
   color: var(--ink-soft);
   cursor: pointer;
   white-space: nowrap;
+  scroll-snap-align: center;
   transition: all 0.15s;
 }
 .year-pill-mini.active {
@@ -560,6 +588,8 @@ input, textarea, select { font-family: inherit; }
   cursor: pointer; user-select: none;
   padding: 2px 4px; border-radius: 12px;
   transition: all 0.15s;
+  scroll-snap-align: center;
+  scroll-snap-stop: always;
   z-index: 1;
 }
 .year-dot {
@@ -715,8 +745,17 @@ input, textarea, select { font-family: inherit; }
 .postcard-edit:hover { color: var(--primary); border-color: var(--primary); }
 
 @media (max-width: 760px) {
-  .postcard-row { grid-auto-columns: minmax(220px, 1fr); }
+  .trip-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+  .trip-card { padding: 14px; border-radius: 16px; }
+  .trip-card-banner { height: 96px; font-size: 48px; }
+  .postcard-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .postcard-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .year-map { width: 100%; }
+  .year-track { gap: 16px; padding: 10px 12px 6px; }
+  .year-dot { width: 10px; height: 10px; }
 }
 
 /* Empty state */
@@ -777,8 +816,16 @@ input, textarea, select { font-family: inherit; }
   background: linear-gradient(135deg, var(--primary-soft) 0%, transparent 50%);
   opacity: 0.6; pointer-events: none;
 }
-.trip-header-row { display: flex; gap: 22px; align-items: center; position: relative; }
+.trip-header-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  grid-template-areas: "emoji meta actions";
+  gap: 22px;
+  align-items: start;
+  position: relative;
+}
 .trip-emoji {
+  grid-area: emoji;
   font-size: 60px; line-height: 1;
   width: 86px; height: 86px; border-radius: 22px;
   display: grid; place-items: center;
@@ -788,7 +835,7 @@ input, textarea, select { font-family: inherit; }
   border: 1px solid var(--line);
 }
 .trip-emoji:hover { transform: scale(1.04); }
-.trip-meta { flex: 1; min-width: 0; }
+.trip-meta { grid-area: meta; flex: 1; min-width: 0; }
 .trip-title {
   font-size: 28px; margin-bottom: 4px;
   display: flex; align-items: center; gap: 10px;
@@ -803,6 +850,22 @@ input, textarea, select { font-family: inherit; }
 .trip-sub { color: var(--ink-soft); font-size: 14px; display: flex; gap: 14px; flex-wrap: wrap; align-items: center; }
 .trip-sub span { display: inline-flex; align-items: center; gap: 5px; }
 .trip-sub svg { width: 14px; height: 14px; opacity: 0.7; }
+
+.trip-actions {
+  grid-area: actions;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10px;
+}
+.trip-actions-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: nowrap;
+}
+.trip-actions-row .btn { white-space: nowrap; }
+.trip-back-btn { align-self: flex-end; }
 
 .trip-stats {
   display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
@@ -1280,6 +1343,33 @@ table.t tfoot td {
 }
 .emoji-picker button:hover { background: var(--primary-soft); border-color: var(--primary); }
 .emoji-picker button.sel { background: var(--primary-soft); border-color: var(--primary); }
+
+.share-tabs-wrap { margin: 8px 0 10px; }
+.share-tabs-label {
+  font-size: 12px; font-weight: 600; color: var(--ink-soft);
+  text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 6px;
+}
+.share-tabs {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 6px;
+}
+.share-tab-chip {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 13px; cursor: pointer;
+  padding: 6px 10px; border: 1px solid var(--line);
+  border-radius: 8px; background: var(--surface-2);
+  user-select: none;
+}
+.share-tab-chip input { accent-color: var(--primary); cursor: pointer; }
+.share-link-row { display: flex; gap: 8px; align-items: center; flex-wrap: nowrap; }
+.share-link-input {
+  flex: 1; padding: 9px 12px;
+  border: 1px solid var(--line); border-radius: 9px;
+  font: inherit; font-size: 13px;
+  background: var(--surface-2);
+  min-width: 0;
+}
 
 /* ===========================================================
    FAB (Quick calc)
@@ -1759,9 +1849,63 @@ table.t tfoot td {
   .hero { flex-direction: column-reverse; align-items: flex-start; gap: 14px; }
   .hero-text h1 { font-size: 28px; }
   .hero-emoji { font-size: 54px; }
-  .trip-header-row { flex-direction: column; align-items: flex-start; }
+  .trip-header-row {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "actions"
+      "emoji"
+      "meta";
+  }
+  .trip-actions { align-items: flex-end; }
+  .trip-actions-row { width: 100%; justify-content: flex-end; gap: 6px; }
+  .trip-actions-row .btn { padding: 8px 10px; font-size: 12px; }
   .app { padding: 18px; }
   .nav { padding: 12px 18px; }
+}
+
+@media (max-width: 600px) {
+  .trip-grid { gap: 10px; }
+  .trip-card { padding: 12px; }
+  .trip-card-title { font-size: 16px; }
+  .trip-card-row { font-size: 12px; gap: 8px; }
+  .postcard { padding: 12px 12px 10px; }
+  .year-map { padding: 8px 10px; gap: 6px; }
+  .year-map::before { content: "Swipe ->"; opacity: 0.75; }
+  .year-track { gap: 12px; padding: 8px 10px 6px; }
+  .year-track::before { left: 10px; right: 10px; top: 16px; }
+  .year-handle { width: 16px; height: 16px; top: 16px; border-width: 2px; }
+  .year-pill-mini { padding: 5px 8px; font-size: 11px; }
+  .year-label { font-size: 11px; }
+  .year-count { font-size: 9px; padding: 2px 6px; }
+  .share-tabs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 480px) {
+  .app { padding: 14px; }
+  .nav { padding: 10px 14px; }
+  .brand-name { font-size: 16px; }
+  .brand-tag { font-size: 14px; }
+  .icon-btn { width: 34px; height: 34px; }
+  .user-chip { height: 34px; font-size: 12px; padding: 0 10px 0 6px; }
+  .trip-card-banner { height: 84px; font-size: 40px; }
+  .postcard-row, .postcard-grid { gap: 12px; }
+  .trip-actions-row .btn { padding: 7px 9px; font-size: 11px; }
+  .modal-bg { padding: 12px; }
+  .modal { max-width: calc(100vw - 24px); }
+  .modal-head { padding: 16px 16px 10px; }
+  .modal-body { padding: 4px 16px 14px; }
+  .modal-foot { padding: 12px 16px 16px; }
+  .share-tab-chip { padding: 5px 6px; font-size: 12px; }
+  .share-link-row { gap: 6px; }
+  .share-link-input { font-size: 12px; padding: 8px 10px; }
+  .share-link-row .btn.sm { padding: 6px 8px; }
+}
+
+@media (max-width: 360px) {
+  .app { padding: 12px; }
+  .trip-card-title { font-size: 15px; }
+  .trip-card-row { font-size: 11px; }
+  .trip-actions-row .btn { padding: 7px 8px; font-size: 11px; }
 }
 </style>
 </head>
@@ -2425,22 +2569,24 @@ function renderTrip() {
             </span>` : "")}
           </div>
         </div>
-        <div class="row">
-          <button class="btn ghost share-hidden" onclick="goHome()" title="Back to dashboard">
+        <div class="trip-actions">
+          <button class="btn ghost share-hidden trip-back-btn" onclick="goHome()" title="Back to dashboard">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
             All trips
           </button>
-          <button class="btn" onclick="window.print()" title="Print / save as PDF">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
-            Print
-          </button>
-          <button class="btn edit-action" onclick="openShareModal('${t.id}')" title="Share this trip">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
-            Share
-          </button>
-          <button class="btn danger edit-action" onclick="confirmDeleteTrip()" title="Delete trip">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
-          </button>
+          <div class="trip-actions-row">
+            <button class="btn" onclick="window.print()" title="Print / save as PDF">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+              Print
+            </button>
+            <button class="btn edit-action" onclick="openShareModal('${t.id}')" title="Share this trip">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+              Share
+            </button>
+            <button class="btn danger edit-action" onclick="confirmDeleteTrip()" title="Delete trip">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+            </button>
+          </div>
         </div>
       </div>
       <div class="trip-stats">
@@ -4642,21 +4788,19 @@ async function openShareModal(tripId) {
       body: `
         <div class="field">
           <label>View-only link</label>
-          <div style="margin:8px 0 10px;">
-            <div style="font-size:12px;font-weight:600;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px;">Tabs to include</div>
-            <div style="display:flex;flex-wrap:wrap;gap:6px;">
+          <div class="share-tabs-wrap">
+            <div class="share-tabs-label">Tabs to include</div>
+            <div class="share-tabs">
               ${ALL_TABS.map(t => `
-                <label style="display:flex;align-items:center;gap:5px;font-size:13px;cursor:pointer;
-                              padding:5px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface-2);user-select:none;">
+                <label class="share-tab-chip">
                   <input type="checkbox" id="stab-${t}" value="${t}" checked onchange="updateShareReadLink()"
-                         style="accent-color:var(--primary);cursor:pointer;" />
+                         />
                   ${TAB_LABELS[t]}
                 </label>`).join("")}
             </div>
           </div>
-          <div style="display:flex;gap:8px;align-items:center;">
-            <input id="share-read-input" value="${readBase}" data-base="${readBase}" readonly
-                   style="flex:1;padding:9px 12px;border:1px solid var(--line);border-radius:9px;font:inherit;font-size:13px;background:var(--surface-2);" />
+          <div class="share-link-row">
+            <input id="share-read-input" class="share-link-input" value="${readBase}" data-base="${readBase}" readonly />
             <button class="btn sm" onclick="copyShareLinkById('share-read-input','share-read-msg')">Copy</button>
           </div>
           <div id="share-read-msg" style="color:var(--primary);font-size:12px;margin-top:4px;display:none;">Copied!</div>
@@ -4664,9 +4808,8 @@ async function openShareModal(tripId) {
         </div>
         <div class="field" style="margin-top:16px;">
           <label>Editable link</label>
-          <div style="display:flex;gap:8px;align-items:center;">
-            <input id="share-edit-input" value="${editLink}" readonly
-                   style="flex:1;padding:9px 12px;border:1px solid var(--line);border-radius:9px;font:inherit;font-size:13px;background:var(--surface-2);" />
+          <div class="share-link-row">
+            <input id="share-edit-input" class="share-link-input" value="${editLink}" readonly />
             <button class="btn sm primary" onclick="copyShareLinkById('share-edit-input','share-edit-msg')">Copy</button>
           </div>
           <div id="share-edit-msg" style="color:var(--primary);font-size:12px;margin-top:4px;display:none;">Copied!</div>
