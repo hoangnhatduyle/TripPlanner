@@ -797,7 +797,7 @@ input, textarea, select { font-family: inherit; }
 }
 .trip-header-row {
   display: grid;
-  grid-template-columns: auto 1fr auto;
+  grid-template-columns: auto 1fr;
   gap: 22px;
   align-items: center;
   position: relative;
@@ -1835,11 +1835,7 @@ table.t tfoot td {
   .hero { flex-direction: column-reverse; align-items: flex-start; gap: 14px; }
   .hero-text h1 { font-size: 28px; }
   .hero-emoji { font-size: 54px; }
-  .trip-header-row { gap: 12px; }
-  .trip-emoji { width: 72px; height: 72px; font-size: 48px; border-radius: 18px; }
-  .trip-title { font-size: 22px; }
-  .trip-back-btn { padding: 7px 10px; font-size: 12px; }
-  .trip-actions-bar { margin-top: 10px; }
+  .trip-actions-bar { margin-top: 10px; flex-wrap: wrap; }
   .trip-actions-bar .btn { padding: 8px 10px; font-size: 12px; }
   .app { padding: 18px; }
   .nav { padding: 12px 18px; }
@@ -2515,10 +2511,6 @@ function renderTrip() {
             <input value="${escapeHtml(t.title)}" oninput="updateTrip('title', this.value)" placeholder="Trip name" ${isEditing() ? '' : 'readonly'} />
           </div>
         </div>
-        <button class="btn ghost share-hidden trip-back-btn" onclick="goHome()" title="Back to dashboard">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
-          All trips
-        </button>
       </div>
       <div class="trip-sub">
         <div class="trip-sub-loc-tz">
@@ -2551,6 +2543,10 @@ function renderTrip() {
         </span>
       </div>
       <div class="trip-actions-bar no-print">
+        <button class="btn ghost share-hidden trip-back-btn" onclick="goHome()" title="Back to dashboard">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+          All trips
+        </button>
         <button class="btn" onclick="window.print()" title="Print / save as PDF">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
           Print
