@@ -3406,8 +3406,10 @@ function updateSlot(dIdx, sIdx, v) {
   const t = currentTrip();
   if (!t.itinerary[dIdx].slots[sIdx]) t.itinerary[dIdx].slots[sIdx] = { time: (t.timeSlots||TIME_SLOTS_DEFAULT)[sIdx], activity: "" };
   const slot = t.itinerary[dIdx].slots[sIdx];
+  const hasActivity = !!(v && v.trim());
   slot.activity = v;
-  if (v && v.trim()) slot.filled = true;
+  slot.filled = hasActivity;
+  if (!hasActivity) slot.span = 1;
   saveState();
   render();
 }
