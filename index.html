@@ -3077,6 +3077,7 @@ function deleteGroup(groupIndex, tripId) {
 }
 
 function toggleTravEditMode() {
+  if (!guardEdit()) return;
   travEditMode = !travEditMode;
   render();
 }
