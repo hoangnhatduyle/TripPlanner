@@ -4253,7 +4253,7 @@ function renderExpenses(t, printMode) {
           </div>
           <div style="flex:2;"></div>
           <div style="flex:2;display:flex;align-items:center;justify-content:flex-end;gap:6px;font-size:13px;color:var(--ink-soft);white-space:nowrap;">
-            Rows:
+            Rows per page:
             <select onchange="setExpensePageSize(this.value)" style="padding:3px 6px;border:1px solid var(--line);border-radius:6px;font:inherit;font-size:13px;background:var(--surface-2);">
               ${[5,10,15,20].map(n => `<option value="${n}" ${expensePageSize===n?'selected':''}>${n}</option>`).join('')}
             </select>
@@ -5102,7 +5102,19 @@ function renderWeatherWidget(t) {
   const today = new Date(); today.setHours(0,0,0,0);
   const diffStart = Math.round((start - today) / 86400000);
   const diffEnd = Math.round((end - today) / 86400000);
-  if (diffStart > 7 || diffEnd < 0) return "";
+  if (diffEnd < 0) return "";
+  if (diffStart > 7) {
+    const daysUntilForecast = diffStart - 7;
+    const unlockDate = new Date(today.getTime() + daysUntilForecast * 86400000);
+    const unlockLabel = daysUntilForecast === 1 ? 'tomorrow' : unlockDate.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+    return `<div class="stat overview-weather" style="padding:16px;">
+      <div class="stat-label" style="margin-bottom:4px;">Weather forecast</div>
+      <div style="font-size:12px;color:var(--ink-soft);line-height:1.6;">
+        🗓️ Available in <strong>${daysUntilForecast}</strong> day${daysUntilForecast !== 1 ? 's' : ''}<br>
+        <span style="font-size:11px;">7-day forecast unlocks ${unlockLabel}.</span>
+      </div>
+    </div>`;
+  }
 
   const cached = weatherCache.get(t.destination);
   const isStale = !cached || (Date.now() - cached.fetchedAt > WEATHER_CACHE_TTL);
