@@ -24,14 +24,19 @@ const showLoginModal = t    => window.showLoginModal(t);
 let resPage = 0;
 let resPageSize = 10;
 let resSearch = "";
-function setResPage(page) { resPage = page; render(); }
-function setResPageSize(size) { resPageSize = parseInt(size); resPage = 0; render(); }
+let resSearchTimer = null;
+const tripPanelRender = () => window.tripPanelRender();
+function setResPage(page) { resPage = page; tripPanelRender(); }
+function setResPageSize(size) { resPageSize = parseInt(size); resPage = 0; tripPanelRender(); }
 function setResSearch(query) {
   resSearch = query;
   resPage = 0;
-  render();
-  const el = document.getElementById("reservation-search");
-  if (el) { el.focus(); el.setSelectionRange(el.value.length, el.value.length); }
+  clearTimeout(resSearchTimer);
+  resSearchTimer = setTimeout(() => {
+    if (!window.renderReservationsPanel()) window.render();
+    const el = document.getElementById("reservation-search");
+    if (el) { el.focus(); el.setSelectionRange(el.value.length, el.value.length); }
+  }, 200);
 }
 
 function resOpenHref(link) {
@@ -170,15 +175,16 @@ function addRes() {
   const t = currentTrip();
   t.reservations = t.reservations || [];
   t.reservations.push({ id: uid(), name: "", status: "pending", dueDate: "", confNum: "", link: "", note: "" });
-  saveState(); render();
+  saveState(); tripPanelRender();
 }
 function updateRes(i, key, value) {
   if (!guardEdit()) return;
-  currentTrip().reservations[i][key] = value; saveState(); if (key==="status" || key==="link") render();
+  currentTrip().reservations[i][key] = value; saveState();
+  if (key === "status" || key === "link") tripPanelRender();
 }
 function deleteRes(i) {
   if (!guardEdit()) return;
-  currentTrip().reservations.splice(i, 1); saveState(); render();
+  currentTrip().reservations.splice(i, 1); saveState(); tripPanelRender();
 }
 
 Object.assign(window, {

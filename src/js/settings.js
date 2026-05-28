@@ -1,5 +1,5 @@
 import { state, route, currentUser, pastYearFilter, simplifyDebts, travEditMode,
-         setTravEditMode, setCurrentUser, setState } from './state.js';
+         setTravEditMode, setCurrentUser, setState, DEFAULT_STATE } from './state.js';
 // Bridges – resolved at call-time via window (no circular imports needed)
 const render        = ()    => window.render();
 const saveState     = ()    => window.saveState();
