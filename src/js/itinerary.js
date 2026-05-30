@@ -2,7 +2,7 @@ import { state, route, currentUser, pastYearFilter, simplifyDebts, travEditMode,
          setTravEditMode, setCurrentUser, setState } from './state.js';
 // Bridges – resolved at call-time via window (no circular imports needed)
 const render        = ()    => window.render();
-const saveState     = ()    => window.saveState();
+const mutate        = p     => window.mutate(p);
 const showModal     = o     => window.showModal(o);
 const closeModal    = ()    => window.closeModal();
 const guardEdit     = ()    => window.guardEdit();
@@ -23,7 +23,7 @@ const isShareMode = () => window.isShareMode();
 
 
 const TIME_SLOTS_DEFAULT = [
-  "7:00 AM","8:00 AM","9:00 AM","10:00 AM","11:00 AM","12:00 PM",
+  "6:00 AM","7:00 AM","8:00 AM","9:00 AM","10:00 AM","11:00 AM","12:00 PM",
   "1:00 PM","2:00 PM","3:00 PM","4:00 PM","5:00 PM","6:00 PM",
   "7:00 PM","8:00 PM","9:00 PM","10:00 PM","11:00 PM"
 ];
@@ -266,22 +266,24 @@ function linkSlotReservation(dIdx, sIdx, resId) {
   const t = currentTrip();
   if (!t.itinerary[dIdx]?.slots[sIdx]) return;
   t.itinerary[dIdx].slots[sIdx].reservationId = resId || undefined;
-  saveState();
+  const day = t.itinerary[dIdx];
+  mutate({ type: 'updateDaySlots', tripId: t.id, dayId: day.id, slots: day.slots });
 }
 function updateSlotField(dIdx, sIdx, field, value) {
   if (!guardEdit()) return;
   const t = currentTrip();
   if (!t.itinerary[dIdx]?.slots[sIdx]) return;
   t.itinerary[dIdx].slots[sIdx][field] = value || undefined;
-  saveState();
-  // Re-render only to update the address link (no full re-render needed for just saving)
-  // But we need the link to appear/disappear, so re-render the itinerary cell
+  const day = t.itinerary[dIdx];
+  mutate({ type: 'updateDaySlots', tripId: t.id, dayId: day.id, slots: day.slots });
   render();
 }
 
 function updateDayTheme(i, v) {
   if (!guardEdit()) return;
-  const t = currentTrip(); t.itinerary[i].theme = v; saveState();
+  const t = currentTrip();
+  t.itinerary[i].theme = v;
+  mutate({ type: 'updateDayTheme', tripId: t.id, dayId: t.itinerary[i].id, theme: v });
 }
 function updateSlot(dIdx, sIdx, v) {
   if (!guardEdit()) return;
@@ -292,7 +294,8 @@ function updateSlot(dIdx, sIdx, v) {
   slot.activity = v;
   slot.filled = hasActivity;
   if (!hasActivity) slot.span = 1;
-  saveState();
+  const day = t.itinerary[dIdx];
+  mutate({ type: 'updateDaySlots', tripId: t.id, dayId: day.id, slots: day.slots });
   render();
 }
 function deleteSlot(dIdx, sIdx) {
@@ -313,7 +316,8 @@ function deleteSlot(dIdx, sIdx) {
         slot.span = 1;
         delete slot.address;
         delete slot.reservationId;
-        saveState();
+        const day = t.itinerary[dIdx];
+        mutate({ type: 'updateDaySlots', tripId: t.id, dayId: day.id, slots: day.slots });
         closeModal();
         render();
       }}
@@ -397,7 +401,8 @@ function openTimeSlotsEditor() {
           (d.slots||[]).forEach(s => { oldMap[s.time] = { activity: s.activity, span: s.span, filled: s.filled }; });
           d.slots = slots.map(time => ({ time, activity: (oldMap[time]||{}).activity || "", span: (oldMap[time]||{}).span || 1, ...(oldMap[time]?.filled ? { filled: true } : {}) }));
         });
-        saveState(); closeModal(); render();
+        mutate({ type: 'syncTimeSlots', tripId: t.id, timeSlots: t.timeSlots, days: t.itinerary });
+        closeModal(); render();
       }}
     ]
   });
@@ -476,7 +481,10 @@ function startSlotDrag(e, dIdx, sIdx) {
     document.removeEventListener('mouseup', onUp);
     document.removeEventListener('touchmove', onMove);
     document.removeEventListener('touchend', onUp);
-    saveState(); render(); // full re-render on drag end
+    const t2 = currentTrip();
+    const day = t2?.itinerary[dIdx];
+    if (day) mutate({ type: 'updateDaySlots', tripId: t2.id, dayId: day.id, slots: day.slots });
+    render(); // full re-render on drag end
   };
 
   document.addEventListener('mousemove', onMove);
@@ -562,7 +570,8 @@ function openActivityTimeDialog(dIdx, sIdx) {
           day.slots[sIdx].span = newSpan;
         }
 
-        saveState(); closeModal(); render();
+        mutate({ type: 'updateDaySlots', tripId: t.id, dayId: day.id, slots: day.slots });
+        closeModal(); render();
       }}
     ]
   });

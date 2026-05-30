@@ -2,7 +2,7 @@ import { state, route, currentUser, pastYearFilter, simplifyDebts, travEditMode,
          setTravEditMode, setCurrentUser, setState } from './state.js';
 // Bridges – resolved at call-time via window (no circular imports needed)
 const render        = ()    => window.render();
-const saveState     = ()    => window.saveState();
+const mutate        = p     => window.mutate(p);
 const showModal     = o     => window.showModal(o);
 const closeModal    = ()    => window.closeModal();
 const guardEdit     = ()    => window.guardEdit();
@@ -337,7 +337,7 @@ function openSplitEditor(i) {
     size: "lg",
     body: `<div id="split-editor-body"></div>`,
     actions: [
-      { label: "Done", primary: true, onClick: () => { saveState(); closeModal(); tripPanelRender(); } }
+      { label: "Done", primary: true, onClick: () => { const tt=currentTrip(); mutateExpenseSync(tt, tt.expenses[i]); closeModal(); tripPanelRender(); } }
     ]
   });
   renderSplitEditor(i);
@@ -547,7 +547,7 @@ function changeSplitMethod(i, method) {
     const each = participants.length ? cost/participants.length : 0;
     participants.forEach(p => e.splitDetails[p] = parseFloat(each.toFixed(2)));
   }
-  saveState();
+  mutateExpenseSync(t, e);
   renderSplitEditor(i);
 }
 
@@ -556,7 +556,7 @@ function updateSplitDetail(i, name, value) {
   const e = t.expenses[i];
   e.splitDetails = e.splitDetails || {};
   e.splitDetails[name] = parseFloat(value) || 0;
-  saveState();
+  mutateExpenseSync(t, e);
   renderSplitEditor(i);
 }
 
@@ -568,7 +568,7 @@ function toggleSplitParticipant(i, name) {
   if (idx >= 0) e.splitAmong.splice(idx, 1); else e.splitAmong.push(name);
   // Clean up details for removed participants
   if (e.splitDetails) { Object.keys(e.splitDetails).forEach(k => { if (!e.splitAmong.includes(k)) delete e.splitDetails[k]; }); }
-  saveState();
+  mutateExpenseSync(t, e);
   renderSplitEditor(i);
 }
 
@@ -576,7 +576,7 @@ function setAllSplitParticipants(i, clear) {
   const t = currentTrip();
   const e = t.expenses[i];
   e.splitAmong = clear ? [] : (t.travelers || []).slice();
-  saveState();
+  mutateExpenseSync(t, e);
   renderSplitEditor(i);
 }
 
@@ -595,7 +595,7 @@ function toggleGroupParticipants(i, groupIdx) {
     members.forEach(p => { if (!e.splitAmong.includes(p)) e.splitAmong.push(p); });
   }
   if (e.splitDetails) { Object.keys(e.splitDetails).forEach(k => { if (!e.splitAmong.includes(k)) delete e.splitDetails[k]; }); }
-  saveState();
+  mutateExpenseSync(t, e);
   renderSplitEditor(i);
 }
 
@@ -628,8 +628,23 @@ function splitAutoBalance(i) {
   } else if (method === "shares" || method === "days") {
     // Already auto-balances proportionally
   }
-  saveState();
+  mutateExpenseSync(t, e);
   renderSplitEditor(i);
+}
+
+// Sync all participant flags + split fields for one expense to the server
+function mutateExpenseSync(t, e) {
+  const travelers = t.travelers || [];
+  mutate({
+    type: 'syncExpenseParticipants',
+    tripId: t.id,
+    expenseId: e.id,
+    paidBy: e.paidBy || [],
+    splitAmong: expenseParticipants(e, travelers), // resolved participants
+    settledBy: e.settledBy || [],
+    splitMethod: e.splitMethod || 'equal',
+    splitDetails: e.splitDetails || {},
+  });
 }
 
 // -------- PAYER & SETTLE-UP DIALOG --------
@@ -650,7 +665,7 @@ function openPayerDialog(i) {
     size: "lg",
     body: `<div id="payer-dialog-body"></div>`,
     actions: [
-      { label: "Done", primary: true, onClick: () => { saveState(); closeModal(); tripPanelRender(); } }
+      { label: "Done", primary: true, onClick: () => { const tt=currentTrip(); mutateExpenseSync(tt, tt.expenses[i]); closeModal(); tripPanelRender(); } }
     ]
   });
   renderPayerDialog(i);
@@ -741,7 +756,7 @@ function dialogTogglePayer(i, name) {
     const si = e.settledBy.indexOf(name);
     if (si >= 0) e.settledBy.splice(si, 1);
   }
-  saveState();
+  mutateExpenseSync(t, e);
   renderPayerDialog(i);
 }
 
@@ -751,7 +766,7 @@ function dialogToggleSettle(i, name) {
   e.settledBy = e.settledBy || [];
   const idx = e.settledBy.indexOf(name);
   if (idx >= 0) e.settledBy.splice(idx, 1); else e.settledBy.push(name);
-  saveState();
+  mutateExpenseSync(t, e);
   renderPayerDialog(i);
 }
 
@@ -771,14 +786,15 @@ function settleWithPerson(otherName) {
         (t.expenses || []).forEach(e => {
           const payers = e.paidBy && e.paidBy.length ? e.paidBy : [];
           const parts = expenseParticipants(e, travelers);
+          let modified = false;
           if (payers.includes(otherName) && parts.includes(me) && !payers.includes(me) && !(e.settledBy||[]).includes(me)) {
-            e.settledBy = [...(e.settledBy||[]), me]; changed = true;
+            e.settledBy = [...(e.settledBy||[]), me]; modified = true; changed = true;
           }
           if (payers.includes(me) && parts.includes(otherName) && !payers.includes(otherName) && !(e.settledBy||[]).includes(otherName)) {
-            e.settledBy = [...(e.settledBy||[]), otherName]; changed = true;
+            e.settledBy = [...(e.settledBy||[]), otherName]; modified = true; changed = true;
           }
+          if (modified) mutateExpenseSync(t, e);
         });
-        if (changed) saveState();
         closeModal(); tripPanelRender();
       }},
       { label: 'Cancel', onClick: closeModal }
@@ -793,7 +809,8 @@ function settleOneDebt(expenseIdx, nameToSettle) {
   e.settledBy = e.settledBy || [];
   if (!e.settledBy.includes(nameToSettle)) {
     e.settledBy.push(nameToSettle);
-    saveState(); tripPanelRender();
+    mutateExpenseSync(t, e);
+    tripPanelRender();
   }
 }
 function buildDetailedDebts(t) {
@@ -972,19 +989,30 @@ function addExpense() {
   if (!guardEdit()) return;
   const t = currentTrip();
   t.expenses = t.expenses || [];
-  t.expenses.push({ id: uid(), name: "", category: "Misc", cost: null, date: "", paidBy: [], settledBy: [], note: "" });
-  saveState(); tripPanelRender();
+  const expense = { id: uid(), name: "", category: "Misc", cost: null, date: "", paidBy: [], settledBy: [], note: "" };
+  t.expenses.push(expense);
+  mutate({ type: 'addExpense', tripId: t.id, expense });
+  tripPanelRender();
 }
 function updateExpense(i, key, value) {
   if (!guardEdit()) return;
   const t = currentTrip();
-  t.expenses[i][key] = value; saveState();
+  const e = t.expenses[i];
+  e[key] = value;
+  // Scalar fields go to updateExpense; paidBy/split changes go to syncExpenseParticipants
+  if (['name', 'category', 'cost', 'date', 'note'].includes(key)) {
+    mutate({ type: 'updateExpense', expenseId: e.id, fields: { [key]: value } });
+  } else {
+    mutateExpenseSync(t, e);
+  }
   if (key === "cost" || key === "paidBy") tripPanelRender();
 }
 function deleteExpense(i) {
   if (!guardEdit()) return;
   const t = currentTrip();
-  t.expenses.splice(i, 1); saveState(); tripPanelRender();
+  const [removed] = t.expenses.splice(i, 1);
+  mutate({ type: 'deleteExpense', tripId: t.id, expenseId: removed.id });
+  tripPanelRender();
 }
 
 Object.assign(window, {

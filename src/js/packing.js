@@ -4,7 +4,7 @@ import { state, route, currentUser, pastYearFilter, simplifyDebts, travEditMode,
 const render        = ()    => window.render();
 const tripPanelRender = () => window.tripPanelRender();
 const updateTripHeaderStats = () => window.updateTripHeaderStats();
-const saveState     = ()    => window.saveState();
+const mutate        = p     => window.mutate(p);
 const showModal     = o     => window.showModal(o);
 const closeModal    = ()    => window.closeModal();
 const guardEdit     = ()    => window.guardEdit();
@@ -97,7 +97,8 @@ function loadPackingTemplate() {
   if (!guardEdit()) return;
   const t = currentTrip();
   t.packing = PACKING_TEMPLATE.map(c => ({ id: uid(), name: c.name, items: c.items.map(i => ({ id: uid(), name: i, packed: false })) }));
-  saveState(); tripPanelRender();
+  mutate({ type: 'syncPackCategories', tripId: t.id, categories: t.packing });
+  tripPanelRender();
 }
 
 // -------- DESTINATION AUTOCOMPLETE --------
@@ -140,7 +141,7 @@ function selectDestination(idx) {
   weatherCache.delete(t.destination);
   t.destination = name;
   t.destinationCoords = coords;
-  saveState();
+  mutate({ type: 'updateTripFields', tripId: t.id, fields: { destination: name, destLat: coords.lat, destLng: coords.lng } });
   render();
 }
 
@@ -299,28 +300,46 @@ function addPackCategory() {
   if (!guardEdit()) return;
   const t = currentTrip();
   t.packing = t.packing || [];
-  t.packing.push({ id: uid(), name: "New category", items: [] });
-  saveState(); tripPanelRender();
+  const category = { id: uid(), name: "New category", items: [] };
+  t.packing.push(category);
+  mutate({ type: 'addPackCategory', tripId: t.id, category });
+  tripPanelRender();
 }
-function updatePackCat(ci, name) { if (!guardEdit()) return; currentTrip().packing[ci].name = name; saveState(); }
+function updatePackCat(ci, name) {
+  if (!guardEdit()) return;
+  const cat = currentTrip().packing[ci];
+  cat.name = name;
+  mutate({ type: 'updatePackCategory', categoryId: cat.id, name });
+}
 function deletePackCat(ci) {
   if (!guardEdit()) return;
   if (!confirm("Delete this category and all its items?")) return;
-  currentTrip().packing.splice(ci, 1); saveState(); tripPanelRender();
+  const t = currentTrip();
+  const [removed] = t.packing.splice(ci, 1);
+  mutate({ type: 'deletePackCategory', categoryId: removed.id });
+  tripPanelRender();
 }
 function addPackItem(ci, name) {
   if (!guardEdit()) return;
   name = name.trim(); if (!name) return;
-  currentTrip().packing[ci].items.push({ id: uid(), name, packed: false });
-  saveState(); tripPanelRender();
+  const t = currentTrip();
+  const item = { id: uid(), name, packed: false };
+  t.packing[ci].items.push(item);
+  mutate({ type: 'addPackItem', categoryId: t.packing[ci].id, item });
+  tripPanelRender();
 }
-function updatePackItem(ci, ii, name) { if (!guardEdit()) return; currentTrip().packing[ci].items[ii].name = name; saveState(); }
+function updatePackItem(ci, ii, name) {
+  if (!guardEdit()) return;
+  const item = currentTrip().packing[ci].items[ii];
+  item.name = name;
+  mutate({ type: 'updatePackItem', itemId: item.id, name });
+}
 function togglePack(ci, ii) {
   if (!guardEdit()) return;
   const t = currentTrip();
   const it = t.packing[ci].items[ii];
   it.packed = !it.packed;
-  saveState();
+  mutate({ type: 'updatePackItem', itemId: it.id, packed: it.packed });
   const cat = document.querySelector(`.pack-cat[data-ci="${ci}"]`);
   if (cat && route.tab === "packing") {
     const row = cat.querySelector(`.pack-item[data-ii="${ii}"]`);
@@ -343,7 +362,10 @@ function togglePack(ci, ii) {
 }
 function deletePackItem(ci, ii) {
   if (!guardEdit()) return;
-  currentTrip().packing[ci].items.splice(ii, 1); saveState(); tripPanelRender();
+  const t = currentTrip();
+  const [removed] = t.packing[ci].items.splice(ii, 1);
+  mutate({ type: 'deletePackItem', itemId: removed.id });
+  tripPanelRender();
 }
 
 Object.assign(window, {

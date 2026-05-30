@@ -2,7 +2,7 @@ import { state, route, currentUser, pastYearFilter, simplifyDebts, travEditMode,
          setTravEditMode, setCurrentUser, setState } from './state.js';
 // Bridges – resolved at call-time via window (no circular imports needed)
 const render        = ()    => window.render();
-const saveState     = ()    => window.saveState();
+const mutate        = p     => window.mutate(p);
 const showModal     = o     => window.showModal(o);
 const closeModal    = ()    => window.closeModal();
 const guardEdit     = ()    => window.guardEdit();
@@ -161,7 +161,8 @@ function submitLinkDriveFolder() {
   const t = currentTrip(); if (!t) return;
   if (!t.driveFolder) t.driveFolder = { folderId: null, thumbnailId: null, thumbnailUrl: null };
   t.driveFolder.folderId = folderId;
-  saveState(); closeModal(); render();
+  mutate({ type: 'updateTripFields', tripId: t.id, fields: { driveFolderId: folderId } });
+  closeModal(); render();
   fetchDrivePhotos(folderId, true);
 }
 
@@ -170,7 +171,8 @@ function unlinkDriveFolder() {
   if (!confirm("Remove the linked Drive folder? Photos will no longer show.")) return;
   const t = currentTrip(); if (!t) return;
   t.driveFolder = { folderId: null, thumbnailId: null, thumbnailUrl: null };
-  saveState(); render();
+  mutate({ type: 'updateTripFields', tripId: t.id, fields: { driveFolderId: null, driveThumbnailId: null, driveThumbnailUrl: null } });
+  render();
 }
 
 function setTripThumbnail(event, fileId) {
@@ -179,7 +181,8 @@ function setTripThumbnail(event, fileId) {
   const t = currentTrip(); if (!t) return;
   if (!t.driveFolder) t.driveFolder = { folderId: null, thumbnailId: null, thumbnailUrl: null };
   t.driveFolder.thumbnailId = fileId;
-  saveState(); render();
+  mutate({ type: 'updateTripFields', tripId: t.id, fields: { driveThumbnailId: fileId } });
+  render();
   if (document.getElementById("modal-root")?.querySelector(".lightbox-bg")) renderLightbox();
 }
 

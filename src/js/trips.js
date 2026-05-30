@@ -2,7 +2,7 @@ import { state, route, currentUser, pastYearFilter, simplifyDebts, travEditMode,
          setTravEditMode, setCurrentUser, setState } from './state.js';
 // Bridges – resolved at call-time via window (no circular imports needed)
 const render        = ()    => window.render();
-const saveState     = ()    => window.saveState();
+const mutate        = p     => window.mutate(p);
 const showModal     = o     => window.showModal(o);
 const closeModal    = ()    => window.closeModal();
 const guardEdit     = ()    => window.guardEdit();
@@ -79,12 +79,12 @@ function newTrip(data) {
     driveFolder: { folderId: null, thumbnailId: null, thumbnailUrl: null },
     destinationCoords: data.destinationCoords || null
   };
-  state.trips.push(trip); saveState(); return trip;
+  state.trips.push(trip); mutate({ type: 'createTrip', trip }); return trip;
 }
 
 function deleteTrip(id) {
   state.trips = state.trips.filter(t => t.id !== id);
-  saveState();
+  mutate({ type: 'deleteTrip', tripId: id });
 }
 function duplicateTrip(id, ev) {
   if (ev) ev.stopPropagation();
@@ -100,7 +100,7 @@ function duplicateTrip(id, ev) {
   // Reset packing items to unpacked
   (clone.packing || []).forEach(cat => cat.items.forEach(item => { item.packed = false; item.id = uid(); }));
   state.trips.push(clone);
-  saveState();
+  mutate({ type: 'createTrip', trip: clone });
   if (route.view === "home" && typeof window.homePanelRender === "function") window.homePanelRender();
   else render();
 }
@@ -109,20 +109,20 @@ function duplicateTrip(id, ev) {
 function updateTrip(key, value) {
   if (!guardEdit()) return;
   const t = currentTrip(); if (!t) return;
-  t[key] = value; saveState();
-  if (["title","destination","budget","timezone"].includes(key)) {
-    // update only header stats — full re-render
-    const hdrEls = document.querySelectorAll(".stat-value");
-    if (key === "budget") render();
-    if (key === "timezone") render();
-  }
+  t[key] = value;
+  mutate({ type: 'updateTripFields', tripId: t.id, fields: { [key]: value } });
+  if (["budget","timezone"].includes(key)) render();
 }
 function updateTripDates(which, value) {
   if (!guardEdit()) return;
   const t = currentTrip(); if (!t) return;
   if (which === "start") t.startDate = value; else t.endDate = value;
   syncItineraryToDateRange(t);
-  saveState(); render();
+  const fields = which === "start" ? { startDate: value } : { endDate: value };
+  mutate({ type: 'updateTripFields', tripId: t.id, fields });
+  // Sync itinerary days/slots if length changed
+  mutate({ type: 'syncTimeSlots', tripId: t.id, timeSlots: t.timeSlots || [], days: t.itinerary });
+  render();
 }
 
 function syncItineraryToDateRange(t) {
@@ -194,7 +194,8 @@ function removeCoverPhoto() {
   const t = currentTrip(); if (!t) return;
   if (!t.driveFolder) return;
   t.driveFolder.thumbnailId = null;
-  saveState(); render();
+  mutate({ type: 'updateTripFields', tripId: t.id, fields: { driveThumbnailId: null } });
+  render();
 }
 
 // -------- EMOJI PICKER --------
@@ -211,7 +212,9 @@ function openEmojiPicker() {
 }
 function pickEmoji(e) {
   e = (e || "").trim(); if (!e) return;
-  const t = currentTrip(); t.emoji = e; saveState(); closeModal(); render();
+  const t = currentTrip(); t.emoji = e;
+  mutate({ type: 'updateTripFields', tripId: t.id, fields: { emoji: e } });
+  closeModal(); render();
 }
 
 // -------- NEW TRIP MODAL --------
