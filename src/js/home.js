@@ -2,7 +2,7 @@ import { state, route, currentUser, pastYearFilter, simplifyDebts, travEditMode,
          setTravEditMode, setCurrentUser, setState } from './state.js';
 // Bridges – resolved at call-time via window (no circular imports needed)
 const render        = ()    => window.render();
-const saveState     = ()    => window.saveState();
+const mutate        = p     => window.mutate(p);
 const showModal     = o     => window.showModal(o);
 const closeModal    = ()    => window.closeModal();
 const guardEdit     = ()    => window.guardEdit();
@@ -423,7 +423,7 @@ function openMemoryLineEditor(tripId) {
       { label: "Save", primary: true, onClick: () => {
         const v = (document.getElementById("memory-line-input").value || "").trim();
         t.memoryLine = v;
-        saveState();
+        mutate({ type: 'updateTripFields', tripId: t.id, fields: { memoryLine: v } });
         closeModal();
         const card = document.querySelector(`.postcard[data-trip-id="${tripId}"]`);
         if (card) {

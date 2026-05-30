@@ -2,7 +2,7 @@ import { state, route, currentUser, pastYearFilter, simplifyDebts, travEditMode,
          setTravEditMode, setCurrentUser, setState } from './state.js';
 // Bridges – resolved at call-time via window (no circular imports needed)
 const render        = ()    => window.render();
-const saveState     = ()    => window.saveState();
+const mutate        = p     => window.mutate(p);
 const showModal     = o     => window.showModal(o);
 const closeModal    = ()    => window.closeModal();
 const guardEdit     = ()    => window.guardEdit();
@@ -341,7 +341,8 @@ function dropTravelerIntoGroup(event, targetGroupIndex, tripId) {
       t.groups[targetGroupIndex].members.push(name);
     }
   }
-  saveState();
+  // Sync all groups that changed membership
+  t.groups.forEach(g => mutate({ type: 'updateGroup', tripId, groupId: g.id, members: g.members }));
   renderGroupsModal(tripId);
 }
 
@@ -349,23 +350,25 @@ function addGroup(tripId) {
   const t = (state.trips || []).find(x => x.id === tripId);
   if (!t) return;
   t.groups = t.groups || [];
-  t.groups.push({ id: uid(), name: `Group ${t.groups.length + 1}`, members: [] });
-  saveState();
+  const group = { id: uid(), name: `Group ${t.groups.length + 1}`, members: [] };
+  t.groups.push(group);
+  mutate({ type: 'addGroup', tripId, group });
   renderGroupsModal(tripId);
 }
 
 function renameGroup(groupIndex, tripId, newName) {
   const t = (state.trips || []).find(x => x.id === tripId);
   if (!t || !t.groups[groupIndex]) return;
-  t.groups[groupIndex].name = (newName || "").trim() || t.groups[groupIndex].name;
-  saveState();
+  const name = (newName || "").trim() || t.groups[groupIndex].name;
+  t.groups[groupIndex].name = name;
+  mutate({ type: 'updateGroup', tripId, groupId: t.groups[groupIndex].id, name });
 }
 
 function deleteGroup(groupIndex, tripId) {
   const t = (state.trips || []).find(x => x.id === tripId);
   if (!t) return;
-  t.groups.splice(groupIndex, 1);
-  saveState();
+  const [removed] = t.groups.splice(groupIndex, 1);
+  mutate({ type: 'deleteGroup', tripId, groupId: removed.id });
   renderGroupsModal(tripId);
 }
 
@@ -379,14 +382,17 @@ function addTraveler(name) {
   name = (name || "").trim(); if (!name) return;
   const t = currentTrip(); if (!t) return;
   t.travelers = t.travelers || [];
-  t.travelers.push(name); saveState(); render();
+  t.travelers.push(name);
+  mutate({ type: 'addTraveler', tripId: t.id, name });
+  render();
 }
 function removeTraveler(name) {
   if (!guardEdit()) return;
   const t = currentTrip(); if (!t) return;
   t.travelers = (t.travelers || []).filter(p => p !== name);
   if (getMyTraveler(t.id) === name) localStorage.removeItem("myTraveler_" + t.id);
-  saveState(); render();
+  mutate({ type: 'removeTraveler', tripId: t.id, name });
+  render();
 }
 function getMyTraveler(tripId) {
   return localStorage.getItem("myTraveler_" + tripId) || null;

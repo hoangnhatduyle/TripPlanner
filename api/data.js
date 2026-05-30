@@ -249,10 +249,8 @@ export default async function handler(req, res) {
       await sql`INSERT INTO user_settings (user_id, theme, currency) VALUES (${user.id}, ${settings.theme || 'beach'}, ${settings.currency || 'USD'})
         ON CONFLICT (user_id) DO UPDATE SET theme = EXCLUDED.theme, currency = EXCLUDED.currency`;
 
-      // Delete all trips for this user — CASCADE removes all child rows
+      // Full state save (used by importJson and resetAll only)
       await sql`DELETE FROM trips WHERE user_id = ${user.id}`;
-
-      // Re-insert everything
       for (let i = 0; i < (state.trips || []).length; i++) {
         await insertTripRows(sql, user.id, state.trips[i], i);
       }
@@ -265,7 +263,8 @@ export default async function handler(req, res) {
           hint: "Run: localStorage.removeItem('tp_token') in the browser console, then reload."
         });
       }
-      throw err;
+      console.error('Save error:', err.message, err.code, err.detail);
+      return res.status(500).json({ error: 'Save failed', detail: err.message });
     }
 
     return res.status(200).json({ ok: true });

@@ -3,6 +3,7 @@ import { state, route, currentUser, pastYearFilter, simplifyDebts, travEditMode,
 // Bridges – resolved at call-time via window (no circular imports needed)
 const render        = ()    => window.render();
 const saveState     = ()    => window.saveState();
+const mutate        = p     => window.mutate(p);
 const showModal     = o     => window.showModal(o);
 const closeModal    = ()    => window.closeModal();
 const guardEdit     = ()    => window.guardEdit();
@@ -118,7 +119,7 @@ function pickTheme(id) {
   document.querySelectorAll(".theme-swatch").forEach(s => s.classList.remove("sel"));
   document.querySelectorAll(`.theme-swatch[onclick*="${id}"]`).forEach(s => s.classList.add("sel"));
 }
-function updateCurrency(c) { if (!guardEdit()) return; state.settings.currency = c; saveState(); render(); }
+function updateCurrency(c) { if (!guardEdit()) return; state.settings.currency = c; mutate({ type: 'updateSettings', currency: c }); render(); }
 function exportJson() {
   const payload = { version: 1, exportedAt: new Date().toISOString(), ...state };
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });

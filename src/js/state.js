@@ -38,10 +38,13 @@ export function saveState() {
   }
   const token = getToken();
   if (!token) return;
+  // saveState() is only for full-state operations: importJson, resetAll
   fetch("/api/data", {
     method: "PUT",
     headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
     body: JSON.stringify(state),
+  }).then(r => {
+    if (!r.ok) r.json().then(d => console.error('Save failed:', d)).catch(() => console.error('Save failed:', r.status));
   }).catch(console.error);
 }
 
@@ -70,7 +73,7 @@ export function setTheme(themeId) {
   document.documentElement.setAttribute("data-theme", themeId);
   state.settings.theme = themeId;
   if (currentUser) localStorage.setItem("tp_theme", themeId);
-  saveState();
+  mutate({ type: 'updateSettings', theme: themeId });
 }
 
 // -------- ROUTING --------
@@ -107,9 +110,32 @@ export function scrollPastYearIntoView(y) {
   if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
+export function mutate(payload) {
+  if (isShareMode() && window._shareToken) {
+    // In share-edit mode fall back to the share save path
+    const trip = currentTrip();
+    if (!trip) return;
+    fetch(`/api/share/${window._shareToken}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ trip }),
+    }).catch(console.error);
+    return;
+  }
+  const token = getToken();
+  if (!token) return;
+  fetch("/api/mutate", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  }).then(r => {
+    if (!r.ok) r.json().then(d => console.error(`[mutate:${payload.type}] failed:`, d)).catch(() => console.error('[mutate] failed:', r.status));
+  }).catch(console.error);
+}
+
 // Window exports
 Object.assign(window, {
-  saveState, loadState, currentTrip, setSimplifyDebts, fmtCurrency, setTheme,
+  saveState, loadState, mutate, currentTrip, setSimplifyDebts, fmtCurrency, setTheme,
   goHome, openTrip, setTab, setPastYearFilter, scrollPastYearIntoView,
 });
 

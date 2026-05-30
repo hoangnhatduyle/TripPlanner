@@ -2,7 +2,7 @@ import { state, route, currentUser, pastYearFilter, simplifyDebts, travEditMode,
          setTravEditMode, setCurrentUser, setState } from './state.js';
 // Bridges – resolved at call-time via window (no circular imports needed)
 const render        = ()    => window.render();
-const saveState     = ()    => window.saveState();
+const mutate        = p     => window.mutate(p);
 const showModal     = o     => window.showModal(o);
 const closeModal    = ()    => window.closeModal();
 const guardEdit     = ()    => window.guardEdit();
@@ -174,17 +174,25 @@ function addRes() {
   if (!guardEdit()) return;
   const t = currentTrip();
   t.reservations = t.reservations || [];
-  t.reservations.push({ id: uid(), name: "", status: "pending", dueDate: "", confNum: "", link: "", note: "" });
-  saveState(); tripPanelRender();
+  const reservation = { id: uid(), name: "", status: "pending", dueDate: "", confNum: "", link: "", note: "" };
+  t.reservations.push(reservation);
+  mutate({ type: 'addReservation', tripId: t.id, reservation });
+  tripPanelRender();
 }
 function updateRes(i, key, value) {
   if (!guardEdit()) return;
-  currentTrip().reservations[i][key] = value; saveState();
+  const t = currentTrip();
+  const r = t.reservations[i];
+  r[key] = value;
+  mutate({ type: 'updateReservation', resId: r.id, fields: { [key]: value } });
   if (key === "status" || key === "link") tripPanelRender();
 }
 function deleteRes(i) {
   if (!guardEdit()) return;
-  currentTrip().reservations.splice(i, 1); saveState(); tripPanelRender();
+  const t = currentTrip();
+  const [removed] = t.reservations.splice(i, 1);
+  mutate({ type: 'deleteReservation', resId: removed.id });
+  tripPanelRender();
 }
 
 Object.assign(window, {

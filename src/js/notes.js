@@ -2,22 +2,13 @@ import { state, route, currentUser, pastYearFilter, simplifyDebts, travEditMode,
          setTravEditMode, setCurrentUser, setState } from './state.js';
 // Bridges – resolved at call-time via window (no circular imports needed)
 const render        = ()    => window.render();
-const saveState     = ()    => window.saveState();
+const mutate        = p     => window.mutate(p);
 const showModal     = o     => window.showModal(o);
 const closeModal    = ()    => window.closeModal();
 const guardEdit     = ()    => window.guardEdit();
 const currentTrip   = ()    => window.currentTrip();
 const escapeHtml    = s     => window.escapeHtml(s);
-const fmtCurrency   = n     => window.fmtCurrency(n);
-const escapeAttr    = s     => window.escapeAttr(s);
 const uid           = ()    => window.uid();
-const parseDate     = d     => window.parseDate(d);
-const fmtDate       = (d,o) => window.fmtDate(d,o);
-const daysBetween   = (a,b) => window.daysBetween(a,b);
-const daysUntil     = d     => window.daysUntil(d);
-const fmtBookingTime = v    => window.fmtBookingTime(v);
-const tripDuration  = t     => window.tripDuration(t);
-const showLoginModal = t    => window.showLoginModal(t);
 
 
 // -------- NOTES TAB --------
@@ -56,8 +47,10 @@ function addNote() {
   if (!guardEdit()) return;
   const t = currentTrip(); if (!t) return;
   if (!Array.isArray(t.notes)) t.notes = getNotes(t);
-  t.notes.push({ id: uid(), text: "" });
-  saveState(); render();
+  const note = { id: uid(), text: "" };
+  t.notes.push(note);
+  mutate({ type: 'addNote', tripId: t.id, note });
+  render();
 }
 
 function removeNote(id) {
@@ -65,7 +58,8 @@ function removeNote(id) {
   const t = currentTrip(); if (!t) return;
   if (!Array.isArray(t.notes)) t.notes = getNotes(t);
   t.notes = t.notes.filter(n => n.id !== id);
-  saveState(); render();
+  mutate({ type: 'deleteNote', noteId: id });
+  render();
 }
 
 function updateNote(id, text) {
@@ -73,8 +67,10 @@ function updateNote(id, text) {
   const t = currentTrip(); if (!t) return;
   if (!Array.isArray(t.notes)) t.notes = getNotes(t);
   const n = t.notes.find(n => n.id === id);
-  if (n) { n.text = text; saveState(); }
+  if (n) {
+    n.text = text;
+    mutate({ type: 'updateNote', noteId: id, text });
+  }
 }
 
 Object.assign(window, { getNotes, renderNotes, addNote, removeNote, updateNote });
-
