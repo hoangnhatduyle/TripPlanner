@@ -401,6 +401,10 @@ function addTraveler(name) {
   name = (name || "").trim(); if (!name) return;
   const t = currentTrip(); if (!t) return;
   t.travelers = t.travelers || [];
+  if (t.travelers.some(n => n.toLowerCase() === name.toLowerCase())) {
+    alert(`"${name}" is already in this trip.`);
+    return;
+  }
   t.travelers.push(name);
   mutate({ type: 'addTraveler', tripId: t.id, name });
   render();
