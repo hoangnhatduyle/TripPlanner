@@ -136,7 +136,7 @@ function syncItineraryToDateRange(t) {
   if (dur === null || dur < 1) return;
   const targetDays = dur; // tripDuration already returns inclusive day count (daysBetween + 1)
   while (t.itinerary.length < targetDays) {
-    t.itinerary.push({ id: uid(), theme: "", slots: (t.timeSlots||TIME_SLOTS_DEFAULT).map(time => ({ time, activity: "" })) });
+    t.itinerary.push({ id: uid(), theme: "", events: [] });
   }
   if (t.itinerary.length > targetDays) {
     t.itinerary = t.itinerary.slice(0, targetDays);

@@ -179,8 +179,20 @@ export default async function handler(req, res) {
         const { tripId, timeSlots, days } = p;
         if (!await ownsTrip(sql, tripId, user.id)) return res.status(403).json({ error: "Forbidden" });
         await sql`UPDATE trips SET time_slots = ${JSON.stringify(timeSlots || [])} WHERE id = ${tripId}`;
-        for (const day of (days || [])) {
-          await sql`UPDATE itinerary_days SET theme = ${day.theme || ''} WHERE id = ${day.id}`;
+        const dayList = days || [];
+        // Delete days that no longer exist (trip shortened or days removed)
+        if (dayList.length > 0) {
+          const keepIds = dayList.map(d => d.id);
+          await sql`DELETE FROM itinerary_days WHERE trip_id = ${tripId} AND id != ALL(${keepIds}::text[])`;
+        } else {
+          await sql`DELETE FROM itinerary_days WHERE trip_id = ${tripId}`;
+        }
+        for (let di = 0; di < dayList.length; di++) {
+          const day = dayList[di];
+          // Upsert the day row so new days (from trip extension) are created
+          await sql`INSERT INTO itinerary_days (id, trip_id, day_index, theme)
+                    VALUES (${day.id}, ${tripId}, ${di}, ${day.theme || ''})
+                    ON CONFLICT (id) DO UPDATE SET theme = EXCLUDED.theme, day_index = EXCLUDED.day_index`;
           await sql`DELETE FROM itinerary_slots WHERE day_id = ${day.id}`;
           const evts = day.events || day.slots || [];
           for (let i = 0; i < evts.length; i++) {
