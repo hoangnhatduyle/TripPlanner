@@ -209,7 +209,7 @@ function renderItinerary(t) {
 
       dayColHtml += `
         <div class="itin-event ${isFilled ? 'filled' : ''}"
-             style="top:calc(${startSlot}*var(--slot-h) + 2px);height:calc(${span}*var(--slot-h) - 4px);left:calc(${leftPct}% + 3px);width:calc(${widthPct}% - 6px);"
+             style="top:calc(${startSlot}*var(--slot-h));height:calc(${span}*var(--slot-h) - 1px);left:${leftPct}%;width:${widthPct}%;"
              data-didx="${dIdx}" data-eid="${ev.id}" data-sidx="${startSlot}" data-span="${span}">
           <div class="event-top-bar">
             <div class="slot-time-badge">${spanLabel}</div>
