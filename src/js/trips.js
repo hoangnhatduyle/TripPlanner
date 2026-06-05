@@ -60,7 +60,7 @@ function newTrip(data) {
     emoji: data.emoji || "🏖️",
     startDate: data.startDate || "",
     endDate: data.endDate || "",
-    travelers: (data.travelers || "").split(",").map(s => s.trim()).filter(Boolean),
+    travelers: (data.travelers || "").split(",").map(s => s.trim()).filter(Boolean).filter((n, i, a) => a.findIndex(x => x.toLowerCase() === n.toLowerCase()) === i),
     budget: data.budget ? parseFloat(data.budget) : null,
     expenses: [],
     packing: data.useTemplate

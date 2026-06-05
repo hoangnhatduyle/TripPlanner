@@ -112,7 +112,7 @@ function renderItinerary(t) {
   const displayDayIndices = isMobile ? [itinMobileDay] : t.itinerary.map((_, i) => i);
   const displayDayCount = displayDayIndices.length;
 
-  const gridStyle = `--slot-h: 60px; --event-gap: 12px; grid-template-columns: 80px repeat(${displayDayCount}, minmax(160px, 1fr)); grid-template-rows: auto repeat(${N}, var(--slot-h));`;
+  const gridStyle = `--slot-h: 90px; --event-gap: 12px; grid-template-columns: 80px repeat(${displayDayCount}, minmax(160px, 1fr)); grid-template-rows: auto repeat(${N}, var(--slot-h));`;
 
   let cells = "";
 
@@ -278,12 +278,14 @@ function openResLinkPicker(dIdx, eventId) {
   if (!ev) return;
   const reservations = (t.reservations || []).filter(r => r.name?.trim());
   const currentId = ev.reservationId || "";
+  window._resPending = currentId;
 
   const startDate = parseDate(t.startDate);
   let dayDateStr = "";
   if (startDate) { const dd = new Date(startDate); dd.setDate(dd.getDate() + dIdx); dayDateStr = dd.toISOString().slice(0, 10); }
 
   const STATUS_ICON = { booked: "✓", pending: "⏳", cancelled: "✗" };
+  const refreshLabels = `document.querySelectorAll('[name=res-pick]').forEach(rb=>{var l=rb.closest('label');l.style.borderColor=rb.checked?'var(--primary)':'var(--line)';l.style.background=rb.checked?'var(--primary-soft)':'var(--surface-2)';});`;
 
   showModal({
     title: "Link reservation",
@@ -301,7 +303,8 @@ function openResLinkPicker(dIdx, eventId) {
                           border:1.5px solid ${isLinked ? 'var(--primary)' : 'var(--line)'};
                           background:${isLinked ? 'var(--primary-soft)' : 'var(--surface-2)'};user-select:none;">
               <input type="radio" name="res-pick" value="${r.id}" ${isLinked ? 'checked' : ''}
-                     style="accent-color:var(--primary);" onchange="linkEventReservation(${dIdx},'${eventId}','${r.id}')" />
+                     style="accent-color:var(--primary);"
+                     onchange="window._resPending=this.value; ${refreshLabels}" />
               <span style="flex:1;font-size:13px;font-weight:600;">${escapeHtml(r.name)}</span>
               <span class="slot-res-badge ${r.status||'pending'}" style="pointer-events:none;">
                 ${STATUS_ICON[r.status] || '⏳'} ${r.status || 'pending'}
@@ -311,9 +314,15 @@ function openResLinkPicker(dIdx, eventId) {
         }).join("") : `<p class="muted text-sm">No named reservations yet. Add some in the Reservations tab.</p>`}
       </div>
       ${currentId ? `<button class="btn sm ghost" style="margin-top:12px;color:#c0392b;"
-                             onclick="linkEventReservation(${dIdx},'${eventId}','')">✕ Remove link</button>` : ""}
+                             onclick="window._resPending='';
+                                      document.querySelectorAll('[name=res-pick]').forEach(r=>{r.checked=false;r.closest('label').style.borderColor='var(--line)';r.closest('label').style.background='var(--surface-2)'});
+                                      this.style.display='none';">✕ Remove link</button>` : ""}
     `,
-    actions: [{ label: "Done", primary: true, onClick: () => { closeModal(); render(); } }],
+    actions: [{ label: "Done", primary: true, onClick: () => {
+      if (window._resPending !== currentId) linkEventReservation(dIdx, eventId, window._resPending);
+      closeModal();
+      render();
+    }}],
   });
 }
 

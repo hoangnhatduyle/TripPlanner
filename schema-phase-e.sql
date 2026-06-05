@@ -38,7 +38,8 @@ CREATE TABLE IF NOT EXISTS trip_travelers (
   id      SERIAL PRIMARY KEY,
   trip_id TEXT NOT NULL REFERENCES trips(id) ON DELETE CASCADE,
   name    TEXT NOT NULL,
-  pos     INTEGER NOT NULL DEFAULT 0
+  pos     INTEGER NOT NULL DEFAULT 0,
+  UNIQUE (trip_id, name)
 );
 
 -- ── Groups ─────────────────────────────────────────────────────────────────────

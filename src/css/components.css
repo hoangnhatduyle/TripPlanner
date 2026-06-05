@@ -366,7 +366,7 @@ table.t tfoot td {
 .itin-event {
   position: absolute; box-sizing: border-box;
   overflow: hidden; z-index: 1;
-  padding: 4px 6px;
+  padding: 3px 6px;
   display: flex; flex-direction: column;
 }
 .itin-event.filled {
@@ -378,7 +378,7 @@ table.t tfoot td {
 /* Top bar: time badge + action buttons in the same flex row (no overlap) */
 .itin-event .event-top-bar {
   display: flex; justify-content: space-between; align-items: flex-start;
-  gap: 4px; min-height: 14px; margin-bottom: 1px;
+  gap: 4px; min-height: 12px; margin-bottom: 0;
 }
 .itin-event .event-top-bar .slot-time-badge {
   flex: 1; min-width: 0;
@@ -396,7 +396,7 @@ table.t tfoot td {
   font-variant-numeric: tabular-nums;
 }
 .itin-event .event-textarea {
-  width: 100%; flex: 1; min-height: 0; background: transparent; border: none;
+  width: 100%; flex: 1; min-height: 18px; background: transparent; border: none;
   padding: 0; resize: none;
   font: inherit; font-size: 13px; color: var(--ink);
   overflow-y: auto;
@@ -455,7 +455,7 @@ table.t tfoot td {
 .slot-res-badge {
   display: inline-flex; align-items: center; gap: 3px;
   font-size: 10px; font-weight: 600; padding: 1px 6px;
-  border-radius: 999px; margin-top: 4px;
+  border-radius: 999px; margin-top: 2px;
   pointer-events: none; white-space: nowrap;
 }
 .slot-res-badge.booked   { background: #d4edda; color: #1a6630; }
@@ -477,13 +477,13 @@ table.t tfoot td {
 .itin-event.filled:hover .slot-res-link-btn { display: inline-flex; }
 /* Address field inside itinerary slot */
 .slot-addr-input {
-  width: 100%; margin-top: 5px; padding: 2px 0;
+  width: 100%; margin-top: 2px; padding: 2px 0;
   font-size: 10px; color: var(--ink-soft); background: transparent;
   border: none; border-bottom: 1px dashed var(--line-strong); outline: none;
 }
 .slot-addr-input::placeholder { color: var(--ink-soft); opacity: 0.55; }
 .slot-addr-input:focus { border-color: var(--primary); }
-.slot-addr-row { display: flex; align-items: flex-start; gap: 4px; margin-top: 4px; }
+.slot-addr-row { display: flex; align-items: flex-start; gap: 4px; margin-top: 2px; }
 .slot-addr-link {
   display: inline-flex; align-items: flex-start; gap: 3px; flex: 1;
   font-size: 10px; color: var(--ink-soft);
