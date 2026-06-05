@@ -366,7 +366,7 @@ table.t tfoot td {
 .itin-event {
   position: absolute; box-sizing: border-box;
   overflow: hidden; z-index: 1;
-  padding: 6px 8px;
+  padding: 4px 6px;
 }
 .itin-event.filled {
   background: var(--accent-soft);
@@ -377,7 +377,7 @@ table.t tfoot td {
 /* Top bar: time badge + action buttons in the same flex row (no overlap) */
 .itin-event .event-top-bar {
   display: flex; justify-content: space-between; align-items: flex-start;
-  gap: 4px; min-height: 16px; margin-bottom: 2px;
+  gap: 4px; min-height: 14px; margin-bottom: 1px;
 }
 .itin-event .event-top-bar .slot-time-badge {
   flex: 1; min-width: 0;

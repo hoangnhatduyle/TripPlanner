@@ -112,7 +112,7 @@ function renderItinerary(t) {
   const displayDayIndices = isMobile ? [itinMobileDay] : t.itinerary.map((_, i) => i);
   const displayDayCount = displayDayIndices.length;
 
-  const gridStyle = `--slot-h: 46px; --event-gap: 6px; grid-template-columns: 80px repeat(${displayDayCount}, minmax(160px, 1fr)); grid-template-rows: auto repeat(${N}, var(--slot-h));`;
+  const gridStyle = `--slot-h: 60px; --event-gap: 12px; grid-template-columns: 80px repeat(${displayDayCount}, minmax(160px, 1fr)); grid-template-rows: auto repeat(${N}, var(--slot-h));`;
 
   let cells = "";
 
@@ -592,7 +592,9 @@ function startEventMove(e, dIdx, eventId) {
     if (dayCol) {
       const td  = parseInt(dayCol.dataset.didx);
       const rect = dayCol.getBoundingClientRect();
-      const SLOT_H = 46;
+      const grid = dayCol.closest('.itin-grid');
+      const slotH = grid ? parseFloat(getComputedStyle(grid).getPropertyValue('--slot-h')) : 0;
+      const SLOT_H = slotH || 46;
       const ts = Math.max(0, Math.min(Math.floor((y - rect.top) / SLOT_H), (t.timeSlots || TIME_SLOTS_DEFAULT).length - 1));
       return { dIdx: td, sIdx: ts };
     }
