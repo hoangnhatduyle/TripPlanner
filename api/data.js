@@ -498,12 +498,6 @@ export default async function handler(req, res) {
     const tripCheck = await sql`SELECT 1 FROM trips WHERE user_id = ${user.id} LIMIT 1`;
     const settingsCheck = await sql`SELECT 1 FROM user_settings WHERE user_id = ${user.id} LIMIT 1`;
     if (!tripCheck.length && !settingsCheck.length) {
-      // New user or pre-migration: fall back to app_data if it exists
-      const blob = await sql`SELECT data FROM app_data WHERE user_id = ${user.id}`;
-      if (blob.length) {
-        res.setHeader("Content-Type", "application/json");
-        return res.status(200).send(blob[0].data);
-      }
       return res.status(200).json({ trips: [], settings: { theme: "beach", currency: "USD" } });
     }
     const state = await loadStateFromDB(sql, user.id);
