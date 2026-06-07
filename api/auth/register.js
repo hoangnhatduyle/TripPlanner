@@ -2,7 +2,6 @@ import { getDb } from "../_db.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 
-const DEFAULT_DATA = '{"trips":[],"settings":{"theme":"beach","currency":"USD"}}';
 const USERNAME_RE = /^[a-z0-9_]{3,20}$/;
 
 export default async function handler(req, res) {
@@ -34,11 +33,6 @@ export default async function handler(req, res) {
     INSERT INTO users (username, password_hash)
     VALUES (${normalizedUsername}, ${passwordHash})
     RETURNING id, username
-  `;
-
-  await sql`
-    INSERT INTO app_data (user_id, data) VALUES (${user.id}, ${DEFAULT_DATA})
-    ON CONFLICT (user_id) DO NOTHING
   `;
 
   const token = jwt.sign({ id: user.id, username: user.username }, process.env.JWT_SECRET);
