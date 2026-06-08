@@ -96,7 +96,7 @@ function renderPacking(t) {
 function loadPackingTemplate() {
   if (!guardEdit()) return;
   const t = currentTrip();
-  t.packing = PACKING_TEMPLATE.map(c => ({ id: uid(), name: c.name, items: c.items.map(i => ({ id: uid(), name: i, packed: false })) }));
+  t.packing = window.PACKING_TEMPLATE.map(c => ({ id: uid(), name: c.name, items: c.items.map(i => ({ id: uid(), name: i, packed: false })) }));
   mutate({ type: 'syncPackCategories', tripId: t.id, categories: t.packing });
   tripPanelRender();
 }
