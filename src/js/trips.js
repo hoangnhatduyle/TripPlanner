@@ -297,5 +297,6 @@ Object.assign(window, {
   openTripAvatarMenu, closeAvatarMenu, openCoverPhotoLightbox, removeCoverPhoto,
   openEmojiPicker, pickEmoji,
   openNewTrip, selectNtEmoji,
+  PACKING_TEMPLATE,
 });
 
