@@ -93,12 +93,21 @@ async function openShareModal(tripId) {
                 </label>`).join("")}
             </div>
           </div>
-          <div class="share-link-row">
-            <input id="share-read-input" class="share-link-input" value="${readBase}" data-base="${readBase}" readonly />
-            <button class="btn sm primary" onclick="copyShareLinkById('share-read-input','share-read-msg')">Copy</button>
-            <button class="btn sm" onclick="toggleShareQR('read')" title="Show QR code">${svgIcon("qr")}</button>
+          <div class="share-copy-group">
+            <div class="share-copy-row-label">🔗 Full link <span class="share-copy-note">Desktop &amp; browser — paste or send directly</span></div>
+            <div class="share-link-row">
+              <input id="share-read-input" class="share-link-input" value="${readBase}" data-base="${readBase}" readonly />
+              <button class="btn sm primary" onclick="copyShareLinkById('share-read-input','share-read-msg')">Copy</button>
+              <button class="btn sm" onclick="toggleShareQR('read')" title="Show QR code">${svgIcon("qr")}</button>
+            </div>
+            <div class="share-copy-row-label" style="margin-top:8px;">📱 Token only <span class="share-copy-note">Mobile app — tap the 🔗 button in the nav bar and paste this</span></div>
+            <div class="share-link-row">
+              <input id="share-read-token" class="share-link-input share-token-input" value="${readData.token}" readonly />
+              <button class="btn sm" onclick="copyShareLinkById('share-read-token','share-read-token-msg')">Copy</button>
+            </div>
+            <div id="share-read-msg" style="color:var(--primary);font-size:12px;margin-top:4px;display:none;">Link copied!</div>
+            <div id="share-read-token-msg" style="color:var(--primary);font-size:12px;margin-top:4px;display:none;">Token copied!</div>
           </div>
-          <div id="share-read-msg" style="color:var(--primary);font-size:12px;margin-top:4px;display:none;">Copied!</div>
           <div id="share-qr-panel-read" class="share-qr-panel">
             <img src="" alt="QR Code" width="220" height="220" />
             <div class="qr-hint">Scan to view this trip without signing in</div>
@@ -108,12 +117,21 @@ async function openShareModal(tripId) {
         </div>
         <div class="field" style="margin-top:16px;">
           <label>Editable link</label>
-          <div class="share-link-row">
-            <input id="share-edit-input" class="share-link-input" value="${editLink}" readonly />
-            <button class="btn sm primary" onclick="copyShareLinkById('share-edit-input','share-edit-msg')">Copy</button>
-            <button class="btn sm" onclick="toggleShareQR('edit')" title="Show QR code">${svgIcon("qr")}</button>
+          <div class="share-copy-group">
+            <div class="share-copy-row-label">🔗 Full link <span class="share-copy-note">Desktop &amp; browser — paste or send directly</span></div>
+            <div class="share-link-row">
+              <input id="share-edit-input" class="share-link-input" value="${editLink}" readonly />
+              <button class="btn sm primary" onclick="copyShareLinkById('share-edit-input','share-edit-msg')">Copy</button>
+              <button class="btn sm" onclick="toggleShareQR('edit')" title="Show QR code">${svgIcon("qr")}</button>
+            </div>
+            <div class="share-copy-row-label" style="margin-top:8px;">📱 Token only <span class="share-copy-note">Mobile app — tap the 🔗 button in the nav bar and paste this</span></div>
+            <div class="share-link-row">
+              <input id="share-edit-token" class="share-link-input share-token-input" value="${editData.token}" readonly />
+              <button class="btn sm" onclick="copyShareLinkById('share-edit-token','share-edit-token-msg')">Copy</button>
+            </div>
+            <div id="share-edit-msg" style="color:var(--primary);font-size:12px;margin-top:4px;display:none;">Link copied!</div>
+            <div id="share-edit-token-msg" style="color:var(--primary);font-size:12px;margin-top:4px;display:none;">Token copied!</div>
           </div>
-          <div id="share-edit-msg" style="color:var(--primary);font-size:12px;margin-top:4px;display:none;">Copied!</div>
           <div id="share-qr-panel-edit" class="share-qr-panel">
             <img src="" alt="QR Code" width="220" height="220" />
             <div class="qr-hint">Scan to open this trip in edit mode</div>

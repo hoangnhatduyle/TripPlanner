@@ -749,6 +749,12 @@ table.t tfoot td {
   background: var(--surface-2);
   min-width: 0;
 }
+.share-token-input { font-family: ui-monospace, monospace; letter-spacing: 0.04em; font-size: 12px; }
+.share-copy-group { display: flex; flex-direction: column; gap: 2px; }
+.share-copy-row-label {
+  font-size: 12px; font-weight: 600; color: var(--ink); margin-bottom: 4px;
+}
+.share-copy-note { font-weight: 400; color: var(--ink-soft); margin-left: 4px; }
 
 /* ===========================================================
    FAB (Quick calc)
