@@ -75,10 +75,12 @@ input, textarea, select { font-family: inherit; }
 }
 .brand-mark {
   width: 36px; height: 36px; border-radius: 11px;
-  background: linear-gradient(135deg, var(--primary), var(--accent));
+  overflow: hidden;
   display: grid; place-items: center;
-  color: white; font-size: 18px;
   box-shadow: var(--shadow-sm);
+}
+.brand-mark img {
+  width: 100%; height: 100%; object-fit: cover;
 }
 .brand-name {
   font-weight: 800; font-size: 18px; color: var(--ink);
