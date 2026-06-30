@@ -15,7 +15,7 @@ function showLoginModal(defaultTab = "login") {
     <div class="modal-bg login-bg" onclick="if(event.target===this&&${isLoggedIn()})closeModal()">
       <div class="modal" style="max-width:400px;">
         <div class="modal-head" style="padding:22px 24px 0;text-align:center;">
-          <img src="/src/public/icon-trans-192.png" alt="TripPlanner" width="56" height="56"
+          <img src="/src/public/icons/icon-192x192.png" alt="TripPlanner" width="56" height="56"
                style="margin-bottom:10px;">
           <h3 id="auth-modal-title" style="font-size:20px;font-weight:700;">Sign In</h3>
         </div>
