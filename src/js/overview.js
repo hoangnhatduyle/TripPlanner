@@ -299,7 +299,7 @@ function renderOverview(t) {
               ${nextTasks.map(tk => {
                 const overdue = !!tk.dueDate && tk.dueDate < localTodayStr();
                 const color = tk.assignedTo ? getTravelerColor(t, tk.assignedTo) : null;
-                return `<div class="text-sm">• ${escapeHtml(tk.title)}${tk.assignedTo ? ` <span class="tag" style="font-size:10px;padding:1px 6px;margin-left:4px;background:${color.bg};color:${color.fg};">${escapeHtml(tk.assignedTo)}</span>` : ''}${tk.dueDate ? ` <span class="muted" style="${overdue ? 'color:#c0392b;font-weight:600;' : ''}">${overdue ? 'Overdue · ' : 'by '}${fmtBookingTime(tk.dueDate)}</span>` : ''}</div>`;
+                return `<div class="text-sm">• ${escapeHtml(tk.title)}${tk.assignedTo ? ` <span class="tag" style="font-size:10px;padding:1px 6px;margin-left:4px;background:${color.bg};color:${color.fg};">${escapeHtml(tk.assignedTo)}</span>` : ''}${tk.dueDate ? ` <span class="muted" style="${overdue ? 'color:#c0392b;font-weight:600;' : ''}">${overdue ? 'Overdue · ' : 'on '}${fmtBookingTime(tk.dueDate)}</span>` : ''}</div>`;
               }).join("")}
             </div>
             <button class="btn sm" style="margin-top:10px;" onclick="document.getElementById('tasks-section')?.scrollIntoView({behavior:'smooth'})">View all →</button>

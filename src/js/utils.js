@@ -311,9 +311,9 @@ function fmtDate(dateStr, opts={month:"short",day:"numeric",year:"numeric"}) {
 }
 function fmtBookingTime(val) {
   if (!val) return "";
-  const d = new Date(val);
-  if (isNaN(d)) return val;
   const hasTime = val.includes("T") && !val.endsWith("T");
+  const d = hasTime ? new Date(val) : parseDate(val);
+  if (!d || isNaN(d)) return val;
   if (hasTime) {
     return d.toLocaleDateString(undefined, { month: "short", day: "numeric" }) + " " +
            d.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
