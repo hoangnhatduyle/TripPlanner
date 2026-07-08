@@ -60,7 +60,7 @@ function setTravelerColor(name, tripId, color) {
 }
 
 // -------- SHARED MULTI-ASSIGNEE PICKER (Tasks + Packing) --------
-const ASSIGNEE_CHIPS_VISIBLE = 2; // beyond this, collapse into a "+N" overflow pill
+const ASSIGNEE_CHIPS_VISIBLE = 3; // beyond this, collapse into a "+N" overflow pill
 function renderAssigneeChips(names, t, assignOnClick) {
   const list = names || [];
   const visible = list.slice(0, ASSIGNEE_CHIPS_VISIBLE);
