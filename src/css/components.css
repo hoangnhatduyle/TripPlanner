@@ -256,8 +256,9 @@ table.t tfoot td {
   cursor: pointer; flex-shrink: 0;
 }
 .pack-item-name {
-  flex: 0 0 auto; min-width: 4ch; background: transparent; border: none;
+  flex: 0 0 auto; width: 140px; background: transparent; border: none;
   padding: 3px 0; font-size: 13px; color: var(--ink);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .pack-item-name:focus { outline: none; }
 .pack-item .x {
@@ -1524,8 +1525,9 @@ table.t tfoot td {
 .task-status-icon { font-size: 14px; color: var(--ink-soft); flex-shrink: 0; width: 16px; text-align: center; }
 .task-title { flex: 1; min-width: 0; }
 .task-title-input {
-  flex: 0 0 auto; min-width: 4ch; background: transparent; border: 1px solid transparent;
+  flex: 0 0 auto; width: 170px; background: transparent; border: 1px solid transparent;
   padding: 3px 4px; font-size: 13px; color: var(--ink); border-radius: 6px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .task-title-input:hover { background: var(--surface-2); }
 .task-title-input:focus { outline: none; border-color: var(--primary); background: var(--surface-2); }
