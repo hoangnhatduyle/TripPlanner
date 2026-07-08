@@ -260,6 +260,9 @@ export default async function handler(req, res) {
         for (let ii = 0; ii < (category.items || []).length; ii++) {
           const item = category.items[ii];
           await sql`INSERT INTO packing_items (id, category_id, name, packed, pos) VALUES (${item.id}, ${category.id}, ${item.name || ''}, ${item.packed || false}, ${ii})`;
+          for (const name of item.assignedTo || []) {
+            await sql`INSERT INTO packing_item_assignees (item_id, name) VALUES (${item.id}, ${name}) ON CONFLICT DO NOTHING`;
+          }
         }
         break;
       }

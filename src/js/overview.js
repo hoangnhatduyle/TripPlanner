@@ -792,16 +792,21 @@ function convertTaskToPackingItem(taskId, tripId) {
   if (!t) return;
   const task = (t.tasks || []).find(tk => tk.id === taskId);
   if (!task) return;
+  if (!confirm(`Move "${task.title}" to the Packing list?`)) return;
   t.packing = t.packing || [];
+  const item = { id: uid(), name: task.title, packed: task.status === 'done', assignedTo: task.assignedTo || [] };
   let cat = t.packing.find(c => c.name === 'Unsorted');
   if (!cat) {
-    cat = { id: uid(), name: 'Unsorted', items: [] };
+    // New category + item must be created in one request — two separate
+    // fire-and-forget mutate calls can race and the item insert can hit
+    // the server before the category row is committed (FK violation).
+    cat = { id: uid(), name: 'Unsorted', items: [item] };
     t.packing.push(cat);
     mutate({ type: 'addPackCategory', tripId, category: cat });
+  } else {
+    cat.items.push(item);
+    mutate({ type: 'addPackItem', categoryId: cat.id, item });
   }
-  const item = { id: uid(), name: task.title, packed: task.status === 'done', assignedTo: task.assignedTo || [] };
-  cat.items.push(item);
-  mutate({ type: 'addPackItem', categoryId: cat.id, item });
   t.tasks = (t.tasks || []).filter(tk => tk.id !== taskId);
   mutate({ type: 'deleteTask', tripId, taskId });
   render();
