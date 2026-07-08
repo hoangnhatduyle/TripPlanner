@@ -365,6 +365,7 @@ function convertPackItemToTask(ci, ii) {
   const t = currentTrip();
   const item = t.packing[ci]?.items[ii];
   if (!item) return;
+  if (!confirm(`Move "${item.name}" to Tasks?`)) return;
   t.tasks = t.tasks || [];
   const task = { id: uid(), title: item.name, assignedTo: item.assignedTo || [], status: item.packed ? 'done' : 'pending', dueDate: '', task_order: t.tasks.length };
   t.tasks.push(task);
