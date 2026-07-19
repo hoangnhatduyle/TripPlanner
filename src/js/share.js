@@ -23,7 +23,7 @@ const svgIcon        = n    => window.svgIcon(n);
 
 const ALL_TABS   = ["overview","itinerary","expenses","packing","reservations","notes","photos"];
 const TAB_LABELS = { overview:"Overview", itinerary:"Itinerary", expenses:"Expenses",
-                     packing:"Packing", reservations:"Reservations", notes:"Notes", photos:"Photos" };
+                     packing:"Preparation", reservations:"Reservations", notes:"Notes", photos:"Photos" };
 
 function updateShareReadLink() {
   const input = document.getElementById("share-read-input");

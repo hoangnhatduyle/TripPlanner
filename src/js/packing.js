@@ -34,18 +34,46 @@ let destAcTimer = null;
 let destAcIdx   = -1;
 let destAcResults = [];
 
-// -------- PACKING TAB --------
-function renderPacking(t) {
-  if (!t.packing || t.packing.length === 0) {
+// -------- PREPARATION TAB --------
+const PREP_LISTS = [
+  { key: "packing",  label: "Packing List",  emptyIcon: " 🧳", hint: "Things to physically bring on the trip." },
+  { key: "shopping", label: "Shopping List",  emptyIcon: " 🛒", hint: "Things to buy before the trip. Check off a whole category, then move it into the Packing List." },
+  { key: "todo",     label: "To-Do List",     emptyIcon: " ✅", hint: "Things to do before the trip — not stuff to bring." },
+];
+let prepSubTab = "packing";
+
+function setPrepSubTab(key) {
+  prepSubTab = key;
+  tripPanelRender();
+}
+
+function renderPrepPanel(t) {
+  const active = PREP_LISTS.find(l => l.key === prepSubTab) || PREP_LISTS[0];
+  return `
+    <div class="prep-subtabs no-print">
+      ${PREP_LISTS.map(l => `<button class="prep-subtab ${l.key === active.key ? "active" : ""}" onclick="setPrepSubTab('${l.key}')">${escapeHtml(l.label)}</button>`).join("")}
+    </div>
+    <p class="prep-hint">${escapeHtml(active.hint)}</p>
+    ${renderPackList(t, active.key)}
+  `;
+}
+
+function renderPackList(t, listType) {
+  const entries = (t.packing || [])
+    .map((c, ci) => ({ c, ci }))
+    .filter(({ c }) => (c.listType || "packing") === listType);
+  const meta = PREP_LISTS.find(l => l.key === listType) || PREP_LISTS[0];
+
+  if (entries.length === 0) {
     return `
       <div class="panel">
-        <div class="panel-head"><h3>Packing list</h3></div>
+        <div class="panel-head"><h3>${escapeHtml(meta.label)}</h3></div>
         <div class="empty-mini">
-          <h4>Empty packing list 🧳</h4>
-          <p>Start from a template or build from scratch.</p>
+          <h4>Nothing here yet${meta.emptyIcon}</h4>
+          <p>${listType === "packing" ? "Start from a template or build from scratch." : "Add a category to get started."}</p>
           <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:10px;">
-            <button class="btn primary sm" onclick="loadPackingTemplate()">+ Load template</button>
-            <button class="btn sm" onclick="addPackCategory()">+ Empty category</button>
+            ${listType === "packing" ? `<button class="btn primary sm" onclick="loadPackingTemplate()">+ Load template</button>` : ""}
+            <button class="btn sm" onclick="addPackCategory('${listType}')">+ Empty category</button>
           </div>
         </div>
       </div>
@@ -54,15 +82,16 @@ function renderPacking(t) {
   return `
     <div class="panel">
       <div class="panel-head">
-        <h3>Packing list</h3>
+        <h3>${escapeHtml(meta.label)}</h3>
         <div class="actions" style="display:flex;align-items:center;gap:10px;">
           <span class="tasks-packing-hint" onclick="setTab('overview')" title="Go to Tasks">📋 Chore or errand? → Tasks</span>
-          <button class="btn sm" onclick="addPackCategory()">+ Add category</button>
+          <button class="btn sm" onclick="addPackCategory('${listType}')">+ Add category</button>
         </div>
       </div>
       <div class="pack-grid">
-        ${t.packing.map((c, ci) => {
+        ${entries.map(({ c, ci }) => {
           const total = c.items.length, done = c.items.filter(i=>i.packed).length;
+          const canMove = listType === "shopping" && total > 0 && done === total;
           return `
             <div class="pack-cat" data-ci="${ci}">
               <div class="pack-cat-head">
@@ -90,6 +119,7 @@ function renderPacking(t) {
                   </div>
                 `).join("")}
               </div>
+              ${canMove ? `<button class="btn sm primary no-print pack-move-btn" style="width:100%;justify-content:center;margin-top:8px;" onclick="movePackCategoryToPacking(${ci})">✓ All bought — Move to Packing List</button>` : ""}
               <div class="pack-add no-print">
                 <input placeholder="+ Add item" onkeydown="if(event.key==='Enter'){addPackItem(${ci},this.value);this.value=''}" />
               </div>
@@ -103,8 +133,21 @@ function renderPacking(t) {
 function loadPackingTemplate() {
   if (!guardEdit()) return;
   const t = currentTrip();
-  t.packing = window.PACKING_TEMPLATE.map(c => ({ id: uid(), name: c.name, items: c.items.map(i => ({ id: uid(), name: i, packed: false })) }));
+  const others = (t.packing || []).filter(c => (c.listType || "packing") !== "packing");
+  const templateCats = window.PACKING_TEMPLATE.map(c => ({ id: uid(), name: c.name, listType: "packing", items: c.items.map(i => ({ id: uid(), name: i, packed: false })) }));
+  t.packing = [...others, ...templateCats];
   mutate({ type: 'syncPackCategories', tripId: t.id, categories: t.packing });
+  tripPanelRender();
+}
+function movePackCategoryToPacking(ci) {
+  if (!guardEdit()) return;
+  const t = currentTrip();
+  const cat = t.packing[ci];
+  if (!cat) return;
+  if (!confirm(`Move "${cat.name}" from Shopping List to Packing List? All its items will be reset to unpacked.`)) return;
+  cat.listType = 'packing';
+  cat.items.forEach(i => { i.packed = false; });
+  mutate({ type: 'movePackCategory', categoryId: cat.id, toListType: 'packing' });
   tripPanelRender();
 }
 
@@ -304,11 +347,11 @@ async function fetchWeather(destination, coords = null) {
   if (route.view === "trip" && route.tab === "overview") render();
 }
 
-function addPackCategory() {
+function addPackCategory(listType) {
   if (!guardEdit()) return;
   const t = currentTrip();
   t.packing = t.packing || [];
-  const category = { id: uid(), name: "New category", items: [] };
+  const category = { id: uid(), name: "New category", listType: listType || "packing", items: [] };
   t.packing.push(category);
   mutate({ type: 'addPackCategory', tripId: t.id, category });
   tripPanelRender();
@@ -379,24 +422,39 @@ function convertPackItemToTask(ci, ii) {
 function togglePack(ci, ii) {
   if (!guardEdit()) return;
   const t = currentTrip();
-  const it = t.packing[ci].items[ii];
+  const cat = t.packing[ci];
+  const it = cat.items[ii];
   it.packed = !it.packed;
   mutate({ type: 'updatePackItem', itemId: it.id, packed: it.packed });
-  const cat = document.querySelector(`.pack-cat[data-ci="${ci}"]`);
-  if (cat && route.tab === "packing") {
-    const row = cat.querySelector(`.pack-item[data-ii="${ii}"]`);
+  const catEl = document.querySelector(`.pack-cat[data-ci="${ci}"]`);
+  if (catEl && route.tab === "packing") {
+    const row = catEl.querySelector(`.pack-item[data-ii="${ii}"]`);
     if (row) {
       row.classList.toggle("checked", it.packed);
       const cb = row.querySelector('input[type="checkbox"]');
       if (cb) cb.checked = it.packed;
     }
-    const items = t.packing[ci].items;
+    const items = cat.items;
     const total = items.length;
     const done = items.filter(i => i.packed).length;
-    const prog = cat?.querySelector(".pack-cat-progress");
+    const prog = catEl.querySelector(".pack-cat-progress");
     if (prog) prog.textContent = `${done}/${total}`;
-    const fill = cat?.querySelector(".pack-bar-fill");
+    const fill = catEl.querySelector(".pack-bar-fill");
     if (fill) fill.style.setProperty('--pct', total ? (done / total) : 0);
+    if ((cat.listType || "packing") === "shopping") {
+      const canMove = total > 0 && done === total;
+      let moveBtn = catEl.querySelector(".pack-move-btn");
+      if (canMove && !moveBtn) {
+        moveBtn = document.createElement("button");
+        moveBtn.className = "btn sm primary no-print pack-move-btn";
+        moveBtn.style.cssText = "width:100%;justify-content:center;margin-top:8px;";
+        moveBtn.textContent = "✓ All bought — Move to Packing List";
+        moveBtn.onclick = () => movePackCategoryToPacking(ci);
+        catEl.querySelector(".pack-items").insertAdjacentElement("afterend", moveBtn);
+      } else if (!canMove && moveBtn) {
+        moveBtn.remove();
+      }
+    }
     updateTripHeaderStats(t);
     return;
   }
@@ -411,7 +469,7 @@ function deletePackItem(ci, ii) {
 }
 
 Object.assign(window, {
-  renderPacking, loadPackingTemplate,
+  renderPrepPanel, renderPackList, setPrepSubTab, loadPackingTemplate, movePackCategoryToPacking,
   onDestInput, onDestKeydown, selectDestination, closeDestDropdown, highlightDestOption,
   onNtDestInput, selectNtDest, closeNtDestDropdown,
   renderWeatherWidget,

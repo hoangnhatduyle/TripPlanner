@@ -256,7 +256,7 @@ export default async function handler(req, res) {
         const { tripId, category } = p;
         if (!await ownsTrip(sql, tripId, user.id)) return res.status(403).json({ error: "Forbidden" });
         const [{ c }] = await sql`SELECT COUNT(*)::int AS c FROM packing_categories WHERE trip_id = ${tripId}`;
-        await sql`INSERT INTO packing_categories (id, trip_id, name, pos) VALUES (${category.id}, ${tripId}, ${category.name || ''}, ${c})`;
+        await sql`INSERT INTO packing_categories (id, trip_id, name, pos, list_type) VALUES (${category.id}, ${tripId}, ${category.name || ''}, ${c}, ${category.listType || 'packing'})`;
         for (let ii = 0; ii < (category.items || []).length; ii++) {
           const item = category.items[ii];
           await sql`INSERT INTO packing_items (id, category_id, name, packed, pos) VALUES (${item.id}, ${category.id}, ${item.name || ''}, ${item.packed || false}, ${ii})`;
@@ -284,8 +284,8 @@ export default async function handler(req, res) {
         for (let ci = 0; ci < (categories || []).length; ci++) {
           const cat = categories[ci];
           if (!cat.id) continue;
-          await sql`INSERT INTO packing_categories (id, trip_id, name, pos) VALUES (${cat.id}, ${tripId}, ${cat.name || ''}, ${ci})
-                    ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name, pos = EXCLUDED.pos`;
+          await sql`INSERT INTO packing_categories (id, trip_id, name, pos, list_type) VALUES (${cat.id}, ${tripId}, ${cat.name || ''}, ${ci}, ${cat.listType || 'packing'})
+                    ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name, pos = EXCLUDED.pos, list_type = EXCLUDED.list_type`;
           const itemIds = (cat.items || []).filter(i => i.id).map(i => i.id);
           for (let ii = 0; ii < (cat.items || []).length; ii++) {
             const item = cat.items[ii];
@@ -340,6 +340,13 @@ export default async function handler(req, res) {
 
       case "deletePackItem": {
         await sql`DELETE FROM packing_items WHERE id = ${p.itemId}`;
+        break;
+      }
+
+      case "movePackCategory": {
+        const { categoryId, toListType } = p;
+        await sql`UPDATE packing_categories SET list_type = ${toListType} WHERE id = ${categoryId}`;
+        await sql`UPDATE packing_items SET packed = false WHERE category_id = ${categoryId}`;
         break;
       }
 

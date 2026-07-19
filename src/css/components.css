@@ -188,6 +188,16 @@ table.t tfoot td {
 /* ===========================================================
    PACKING
    =========================================================== */
+.prep-subtabs { display: flex; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+.prep-subtab {
+  padding: 8px 14px; border-radius: 999px;
+  background: var(--surface-2); border: 1px solid var(--line);
+  color: var(--ink-soft); font-weight: 600; font-size: 13px;
+  cursor: pointer; transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.prep-subtab:hover { color: var(--ink); border-color: var(--line-strong); }
+.prep-subtab.active { background: var(--primary); color: white; border-color: var(--primary); }
+.prep-hint { color: var(--ink-soft); font-size: 13px; margin: 0 0 14px; }
 .pack-grid {
   display: grid; gap: 14px;
   grid-template-columns: repeat(4, 1fr);

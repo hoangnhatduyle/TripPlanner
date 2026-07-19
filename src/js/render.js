@@ -25,7 +25,7 @@ const renderDocuments = t => window.renderDocuments(t);
 
 const ALL_TABS    = ["overview","itinerary","expenses","packing","reservations","notes","photos","documents"];
 const TAB_LABELS  = { overview:"Overview", itinerary:"Itinerary", expenses:"Expenses",
-                      packing:"Packing", reservations:"Reservations", notes:"Notes", photos:"Photos", documents:"Docs" };
+                      packing:"Preparation", reservations:"Reservations", notes:"Notes", photos:"Photos", documents:"Docs" };
 const NOTE_COLORS = ["#fef9c3","#dcfce7","#dbeafe","#fce7f3","#ffe4e6"];
 
 // -------- RENDER --------
@@ -77,7 +77,7 @@ function buildPrintHtml(t) {
     <h2 style="margin:24px 0 12px;">Expenses</h2>
     ${renderExpenses(t, true)}
     <h2 style="margin:24px 0 12px;">Packing List</h2>
-    ${renderPacking(t)}
+    ${renderPackList(t, 'packing')}
     <h2 style="margin:24px 0 12px;">Reservations</h2>
     ${renderReservations(t, true)}
     ${getNotes(t).length ? `<h2 style="margin:24px 0 12px;">Notes</h2><div class="panel"><div class="sticky-board">${getNotes(t).map((n,i)=>`<div class="sticky-note" style="background:${NOTE_COLORS[i%NOTE_COLORS.length]};pointer-events:none"><div style="font-size:13px;line-height:1.6;white-space:pre-wrap">${escapeHtml(n.text)}</div></div>`).join("")}</div></div>` : ""}
@@ -108,8 +108,9 @@ function getTripHeaderStats(t) {
         .reduce((s, e) => s + (parseFloat(e.cost) || 0), 0)
     : null;
   const reservOpen = (t.reservations || []).filter(r => r.status !== "booked" && r.status !== "cancelled" && r.name?.trim()).length;
-  const packTotal = (t.packing || []).reduce((s, c) => s + c.items.length, 0);
-  const packDone = (t.packing || []).reduce((s, c) => s + c.items.filter(i => i.packed).length, 0);
+  const packOnly = (t.packing || []).filter(c => (c.listType || 'packing') === 'packing');
+  const packTotal = packOnly.reduce((s, c) => s + c.items.length, 0);
+  const packDone = packOnly.reduce((s, c) => s + c.items.filter(i => i.packed).length, 0);
   return { totalSpend, myExpensesTotal, reservOpen, packDone, packTotal };
 }
 
@@ -142,7 +143,7 @@ function renderPackingPanel() {
   const t = currentTrip();
   const root = document.getElementById("packing-root");
   if (!t || !root) return false;
-  root.innerHTML = renderPacking(t);
+  root.innerHTML = renderPrepPanel(t);
   root.querySelectorAll("textarea.autogrow:not([data-autogrow-bound])").forEach(autoGrow);
   updateTripHeaderStats(t);
   return true;
@@ -264,7 +265,7 @@ function renderTrip() {
       ${allowedTabs.includes("overview") ? tabBtn("overview", "Overview", svgIcon("home")) : ""}
       ${allowedTabs.includes("itinerary") ? tabBtn("itinerary", "Itinerary", svgIcon("calendar")) : ""}
       ${allowedTabs.includes("expenses") ? tabBtn("expenses", "Expenses", svgIcon("dollar")) : ""}
-      ${allowedTabs.includes("packing") ? tabBtn("packing", "Packing", svgIcon("luggage")) : ""}
+      ${allowedTabs.includes("packing") ? tabBtn("packing", "Preparation", svgIcon("luggage")) : ""}
       ${allowedTabs.includes("reservations") ? tabBtn("reservations", "Reservations", svgIcon("bookmark")) : ""}
       ${allowedTabs.includes("notes") ? tabBtn("notes", "Notes", svgIcon("edit")) : ""}
       ${allowedTabs.includes("photos") ? tabBtn("photos", "Photos", svgIcon("camera")) : ""}
@@ -274,7 +275,7 @@ function renderTrip() {
     ${tab === "overview" ? renderOverview(t) : ""}
     ${tab === "itinerary" ? renderItinerary(t) : ""}
     ${tab === "expenses" ? `<div id="expenses-root">${renderExpenses(t)}</div>` : ""}
-    ${tab === "packing" ? `<div id="packing-root">${renderPacking(t)}</div>` : ""}
+    ${tab === "packing" ? `<div id="packing-root">${renderPrepPanel(t)}</div>` : ""}
     ${tab === "reservations" ? `<div id="reservations-root">${renderReservations(t)}</div>` : ""}
     ${tab === "notes" ? renderNotes(t) : ""}
     ${tab === "photos" ? renderPhotos(t) : ""}

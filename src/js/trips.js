@@ -64,7 +64,7 @@ function newTrip(data) {
     budget: data.budget ? parseFloat(data.budget) : null,
     expenses: [],
     packing: data.useTemplate
-      ? PACKING_TEMPLATE.map(c => ({ id: uid(), name: c.name, items: c.items.map(i => ({ id: uid(), name: i, packed: false })) }))
+      ? PACKING_TEMPLATE.map(c => ({ id: uid(), name: c.name, listType: "packing", items: c.items.map(i => ({ id: uid(), name: i, packed: false })) }))
       : [],
     itinerary: Array.from({ length: days }, (_, i) => ({
       id: uid(),
