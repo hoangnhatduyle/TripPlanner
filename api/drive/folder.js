@@ -13,7 +13,7 @@ export default async function handler(req, res) {
   if (!apiKey) return res.status(500).json({ error: "API key not configured" });
 
   const url = new URL("https://www.googleapis.com/drive/v3/files");
-  url.searchParams.set("q", `'${folderId}' in parents and mimeType contains 'image/' and trashed = false`);
+  url.searchParams.set("q", `'${folderId}' in parents and (mimeType contains 'image/' or mimeType contains 'video/') and trashed = false`);
   url.searchParams.set("fields", "files(id,name,createdTime,imageMediaMetadata,thumbnailLink,mimeType)");
   url.searchParams.set("orderBy", "createdTime");
   url.searchParams.set("pageSize", "100");

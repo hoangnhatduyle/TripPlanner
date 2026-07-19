@@ -28,6 +28,10 @@ let lightboxFiles         = [];
 let lightboxIdx           = 0;
 const lightboxFullResReady = new Set();
 
+function isVideoFile(f) {
+  return !!(f.mimeType && f.mimeType.startsWith("video/"));
+}
+
 // -------- PHOTOS TAB --------
 function renderPhotos(t) {
   const fd = t.driveFolder || {};
@@ -58,13 +62,15 @@ function renderPhotos(t) {
   } else if (cached.error) {
     gridHtml = `<div class="empty-mini" style="color:#c0392b;">${escapeHtml(cached.error)}</div>`;
   } else if (!cached.files.length) {
-    gridHtml = `<div class="empty-mini">No images found in this folder.</div>`;
+    gridHtml = `<div class="empty-mini">No photos or videos found in this folder.</div>`;
   } else {
     const thumbs = cached.files.map((f, i) => {
       const isThumb = f.id === thumbnailId;
+      const isVideo = isVideoFile(f);
       const thumbSrc = getFileThumbUrl(f, 400);
       return `<div class="photo-thumb${isThumb ? " is-cover" : ""}" onclick="openLightbox(${i})">
         <img data-src="${escapeAttr(thumbSrc)}" src="" alt="${escapeHtml(f.name)}" loading="lazy" decoding="async" />
+        ${isVideo ? `<div class="photo-thumb-play-badge">${svgIcon("play")}</div>` : ""}
         ${isThumb ? `<div class="photo-thumb-cover-badge">★ Cover</div>` : ""}
         <div class="photo-thumb-overlay">
           ${!shareReadOnly ? `<button class="photo-thumb-star${isThumb ? " is-thumb" : ""}" onclick="setTripThumbnail(event,'${escapeAttr(f.id)}')" title="${isThumb ? "Set another photo as cover" : "Set as trip cover"}">★</button>` : ""}
@@ -78,7 +84,7 @@ function renderPhotos(t) {
   return `<div class="panel">
     <div class="panel-head">
       <h3>Photos</h3>
-      ${cached?.files?.length ? `<span style="font-size:13px;color:var(--ink-soft);">${cached.files.length} photo${cached.files.length === 1 ? "" : "s"}</span>` : ""}
+      ${cached?.files?.length ? `<span style="font-size:13px;color:var(--ink-soft);">${cached.files.length} item${cached.files.length === 1 ? "" : "s"}</span>` : ""}
     </div>
     ${folderRow}
     ${gridHtml}
@@ -201,14 +207,18 @@ function renderLightbox() {
   const total = lightboxFiles.length;
   const t = currentTrip();
   const isThumb = t?.driveFolder?.thumbnailId === f.id;
+  const isVideo = isVideoFile(f);
   const shareReadOnly = document.documentElement.getAttribute("data-share") === "read";
   // Use thumbnailLink directly when available (Google CDN, no proxy hop); fall back to proxy
   const thumbSrc = getFileThumbUrl(f, 400);
   const fullSrc  = getFileThumbUrl(f, 1200);
+  const mediaHtml = isVideo
+    ? `<iframe id="lightbox-video" class="lightbox-video-frame" src="https://drive.google.com/file/d/${encodeURIComponent(f.id)}/preview" allow="autoplay" allowfullscreen frameborder="0"></iframe>`
+    : `<img id="lightbox-img" src="${escapeAttr(thumbSrc)}" alt="${escapeHtml(f.name)}" />`;
   const root = document.getElementById("modal-root");
   root.innerHTML = `<div class="lightbox-bg" onclick="if(event.target===this)closeLightbox()" id="lightbox-bg">
-    <div class="lightbox-img-wrap">
-      <img id="lightbox-img" src="${escapeAttr(thumbSrc)}" alt="${escapeHtml(f.name)}" />
+    <div class="lightbox-img-wrap${isVideo ? " is-video" : ""}">
+      ${mediaHtml}
     </div>
     <button class="lightbox-close" onclick="closeLightbox()" title="Close (Esc)">✕</button>
     ${total > 1 ? `<button class="lightbox-nav prev" onclick="moveLightbox(-1)">&#8249;</button>
@@ -216,24 +226,26 @@ function renderLightbox() {
     <div class="lightbox-counter">${lightboxIdx + 1} / ${total}</div>
     ${!shareReadOnly ? `<button class="lightbox-cover-btn${isThumb ? " is-thumb" : ""}" onclick="setTripThumbnail(event,'${escapeAttr(f.id)}')">${isThumb ? "★ Trip Cover" : "☆ Set as Cover"}</button>` : ""}
   </div>`;
-  // If full-res already loaded this session, swap src immediately (browser HTTP cache = no network)
-  if (lightboxFullResReady.has(f.id)) {
-    const el = document.getElementById("lightbox-img");
-    if (el) el.src = fullSrc;
-  } else {
-    const hi = new Image();
-    hi.onload = () => {
-      lightboxFullResReady.add(f.id);
+  if (!isVideo) {
+    // If full-res already loaded this session, swap src immediately (browser HTTP cache = no network)
+    if (lightboxFullResReady.has(f.id)) {
       const el = document.getElementById("lightbox-img");
       if (el) el.src = fullSrc;
-    };
-    hi.src = fullSrc;
+    } else {
+      const hi = new Image();
+      hi.onload = () => {
+        lightboxFullResReady.add(f.id);
+        const el = document.getElementById("lightbox-img");
+        if (el) el.src = fullSrc;
+      };
+      hi.src = fullSrc;
+    }
   }
-  // Preload adjacent images so navigation is instant
+  // Preload adjacent images so navigation is instant (skip videos, nothing to preload)
   if (lightboxFiles.length > 1) {
     [-1, 1, 2].forEach(offset => {
       const nf = lightboxFiles[(lightboxIdx + offset + lightboxFiles.length) % lightboxFiles.length];
-      if (nf && nf !== f && !lightboxFullResReady.has(nf.id)) {
+      if (nf && nf !== f && !isVideoFile(nf) && !lightboxFullResReady.has(nf.id)) {
         const pre = new Image();
         pre.onload = () => lightboxFullResReady.add(nf.id);
         pre.src = getFileThumbUrl(nf, 1200);
