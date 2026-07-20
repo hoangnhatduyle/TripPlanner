@@ -18,12 +18,13 @@ function verifyToken(req) {
 // ── Build the full app state from relational tables ───────────────────────────
 export async function loadStateFromDB(sql, userId) {
   const [
-    settingsRows, tripRows, travRows, groupRows, gmRows,
+    settingsRows, googleRows, tripRows, travRows, groupRows, gmRows,
     dayRows, slotRows, expRows, partRows,
     catRows, itemRows, itemAssigneeRows, resRows, noteRows,
     taskRows, taskAssigneeRows, subtaskRows, subtaskAssigneeRows, annRows,
   ] = await Promise.all([
     sql`SELECT theme, currency FROM user_settings WHERE user_id = ${userId}`,
+    sql`SELECT google_email FROM google_oauth_accounts WHERE user_id = ${userId}`,
     sql`SELECT * FROM trips WHERE user_id = ${userId} ORDER BY trip_order, created_at`,
     sql`SELECT tt.trip_id, tt.name FROM trip_travelers tt JOIN trips t ON tt.trip_id = t.id WHERE t.user_id = ${userId} ORDER BY tt.trip_id, tt.pos`,
     sql`SELECT g.id, g.trip_id, g.name FROM trip_groups g JOIN trips t ON g.trip_id = t.id WHERE t.user_id = ${userId} ORDER BY g.pos`,
@@ -145,7 +146,7 @@ export async function loadStateFromDB(sql, userId) {
   });
 
   const s = settingsRows[0] || {};
-  return { trips, settings: { theme: s.theme || 'beach', currency: s.currency || 'USD' } };
+  return { trips, settings: { theme: s.theme || 'beach', currency: s.currency || 'USD', googleDriveEmail: googleRows[0]?.google_email || null } };
 }
 
 // ── Persist a single trip and all its children (inside an open tx) ────────────
@@ -569,7 +570,7 @@ export default async function handler(req, res) {
     const tripCheck = await sql`SELECT 1 FROM trips WHERE user_id = ${user.id} LIMIT 1`;
     const settingsCheck = await sql`SELECT 1 FROM user_settings WHERE user_id = ${user.id} LIMIT 1`;
     if (!tripCheck.length && !settingsCheck.length) {
-      return res.status(200).json({ trips: [], settings: { theme: "beach", currency: "USD" } });
+      return res.status(200).json({ trips: [], settings: { theme: "beach", currency: "USD", googleDriveEmail: null } });
     }
     const state = await loadStateFromDB(sql, user.id);
     return res.status(200).json(state);

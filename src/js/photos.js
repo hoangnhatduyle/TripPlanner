@@ -47,7 +47,7 @@ function renderPhotos(t) {
 
   const folderRow = folderId
     ? `<div class="drive-link-row">
-        <a class="drive-folder-label" href="${escapeAttr(`https://drive.google.com/drive/folders/${folderId}`)}" target="_blank" rel="noopener noreferrer" title="Open in Google Drive">📁 Google Drive folder linked</a>
+        <a class="drive-folder-label" href="${escapeAttr(`https://drive.google.com/drive/folders/${folderId}`)}" target="_blank" rel="noopener noreferrer" title="Open in Google Drive">📁 Google Drive folder linked <span class="drive-folder-label-ext">Open in Drive ↗</span></a>
         ${!shareReadOnly ? `
           <button class="btn sm" onclick="refreshDrivePhotos('${escapeAttr(folderId)}')">Refresh</button>
           <button class="btn sm ghost" style="color:#c0392b;" onclick="unlinkDriveFolder()">Unlink</button>` : ""}
@@ -58,6 +58,7 @@ function renderPhotos(t) {
       </div>` : "");
 
   const uploadState = photoUploadState.get(t.id);
+  const isShareEditor = document.documentElement.getAttribute("data-share") === "edit";
   const uploadZone = (folderId && !shareReadOnly)
     ? `<div class="doc-upload-zone" id="photo-dropzone-${escapeAttr(t.id)}"
           ondragover="event.preventDefault();this.classList.add('drag-over')"
@@ -70,7 +71,8 @@ function renderPhotos(t) {
             : `<input type="file" id="photo-file-input-${escapeAttr(t.id)}" accept="image/*" multiple style="display:none"
                      onchange="photoFilesSelected(event,'${escapeAttr(t.id)}','${escapeAttr(folderId)}')" />
                <button class="btn" onclick="document.getElementById('photo-file-input-${escapeAttr(t.id)}').click()">${svgIcon("camera")} Add Photos</button>
-               <span class="muted text-sm" style="margin-left:8px;">or drag &amp; drop · uploads straight to the linked Drive folder</span>`
+               <span class="muted text-sm" style="margin-left:8px;">or drag &amp; drop · uploads straight to the linked Drive folder</span>
+               ${isShareEditor ? `<div class="hint" style="width:100%;margin-top:6px;">📦 Saved to the trip owner's Google Drive.</div>` : ""}`
           }
         </div>
       </div>`

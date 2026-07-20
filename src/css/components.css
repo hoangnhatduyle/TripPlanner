@@ -1350,12 +1350,15 @@ table.t tfoot td {
   margin-bottom: 16px; flex-wrap: wrap;
 }
 .drive-link-row .drive-folder-label {
-  font-size: 13px; color: var(--ink-soft); flex: 1; min-width: 0;
+  font-size: 13px; color: var(--primary); flex: 1; min-width: 0;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-  text-decoration: none; cursor: pointer;
+  text-decoration: underline; cursor: pointer;
 }
 .drive-link-row .drive-folder-label:hover {
-  color: var(--ink); text-decoration: underline;
+  filter: brightness(0.85);
+}
+.drive-folder-label-ext {
+  font-size: 11px; font-weight: 600; opacity: .75; margin-left: 4px;
 }
 
 /* Lightbox */
