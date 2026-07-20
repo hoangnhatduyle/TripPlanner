@@ -163,6 +163,14 @@ CREATE TABLE IF NOT EXISTS trip_announcements (
 );
 CREATE INDEX IF NOT EXISTS idx_trip_announcements_trip ON trip_announcements(trip_id);
 
+-- ── Google Drive OAuth (owner-connected account for photo uploads) ─────────────
+CREATE TABLE IF NOT EXISTS google_oauth_accounts (
+  user_id       INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+  google_email  TEXT,
+  refresh_token TEXT NOT NULL,
+  connected_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 -- ── Document Vault ─────────────────────────────────────────────────────────────
 -- blob_url is the Vercel Blob internal URL — never sent to clients directly.
 -- All file access goes through /api/docs/file/:id which verifies JWT ownership.

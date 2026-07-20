@@ -1,11 +1,12 @@
 import { getDb } from "../_db.js";
 import jwt from "jsonwebtoken";
 import Busboy from "busboy";
-import { getServiceAccountAccessToken } from "../_google-drive-auth.js";
+import { getGoogleAuthUrl, exchangeCodeForTokens, fetchGoogleEmail, getOwnerAccessToken } from "../_google-oauth.js";
 
-// Vercel's Hobby plan caps a deployment at 12 Serverless Functions, so the
-// three Drive endpoints (folder listing, thumbnail proxy, upload) live in
-// this single file instead of one file each — dispatched by method/action.
+// Vercel's Hobby plan caps a deployment at 12 Serverless Functions, so all the
+// Drive-related endpoints (folder listing, thumbnail proxy, upload, and the
+// owner's Google OAuth connect flow) live in this single file — dispatched by
+// method/query instead of one file each.
 export const config = {
   api: { bodyParser: false },
 };
@@ -28,11 +29,15 @@ export default async function handler(req, res) {
 
   try {
     if (req.method === "GET") {
+      if (req.query.code || req.query.error) return await handleOAuthCallback(req, res);
       const { action } = req.query;
       if (action === "thumb") return await handleThumb(req, res);
       return await handleFolder(req, res);
     }
-    if (req.method === "POST") return await handleUpload(req, res);
+    if (req.method === "POST") {
+      if (req.query.action === "oauth-start") return await handleOAuthStart(req, res);
+      return await handleUpload(req, res);
+    }
     return res.status(405).json({ error: "Method not allowed" });
   } catch (err) {
     console.error("[drive] uncaught:", err);
@@ -102,7 +107,60 @@ async function handleThumb(req, res) {
   }
 }
 
-// ── POST — upload a photo into a linked Drive folder via the service account ─
+// ── POST ?action=oauth-start — mint a Google consent URL for the logged-in owner ─
+async function handleOAuthStart(req, res) {
+  const user = verifyToken(req);
+  if (!user) return res.status(401).json({ error: "Unauthorized" });
+
+  const stateToken = jwt.sign({ purpose: "google-connect", userId: user.id }, process.env.JWT_SECRET, { expiresIn: "5m" });
+  return res.status(200).json({ authUrl: getGoogleAuthUrl(stateToken) });
+}
+
+// ── GET ?code=...&state=... — Google's OAuth redirect back to the app ────────
+async function handleOAuthCallback(req, res) {
+  const { code, error, state } = req.query;
+
+  const redirect = (qs) => {
+    res.writeHead(302, { Location: `/?${qs}` });
+    return res.end();
+  };
+
+  if (error) return redirect(`google=error&msg=${encodeURIComponent("Google sign-in was cancelled.")}`);
+
+  let statePayload;
+  try {
+    statePayload = jwt.verify(state, process.env.JWT_SECRET);
+    if (statePayload.purpose !== "google-connect") throw new Error("bad state");
+  } catch {
+    return redirect(`google=error&msg=${encodeURIComponent("This connection link expired — try again from Settings.")}`);
+  }
+
+  const sql = getDb();
+  try {
+    const tokens = await exchangeCodeForTokens(code);
+    const email = await fetchGoogleEmail(tokens.access_token);
+
+    if (tokens.refresh_token) {
+      await sql`INSERT INTO google_oauth_accounts (user_id, google_email, refresh_token, connected_at)
+        VALUES (${statePayload.userId}, ${email}, ${tokens.refresh_token}, NOW())
+        ON CONFLICT (user_id) DO UPDATE SET
+          google_email  = EXCLUDED.google_email,
+          refresh_token = EXCLUDED.refresh_token,
+          connected_at  = NOW()`;
+    } else {
+      const [existing] = await sql`SELECT 1 FROM google_oauth_accounts WHERE user_id = ${statePayload.userId}`;
+      if (!existing) throw new Error("Google didn't return a refresh token — please try connecting again.");
+      await sql`UPDATE google_oauth_accounts SET google_email = ${email}, connected_at = NOW() WHERE user_id = ${statePayload.userId}`;
+    }
+
+    return redirect("google=connected");
+  } catch (err) {
+    console.error("[drive oauth-callback]", err.message);
+    return redirect(`google=error&msg=${encodeURIComponent(err.message || "Failed to connect Google Drive.")}`);
+  }
+}
+
+// ── POST — upload a photo into a linked Drive folder, as the trip owner ──────
 function readRawBody(req) {
   return new Promise((resolve, reject) => {
     if (Buffer.isBuffer(req.body)) return resolve(req.body);
@@ -188,10 +246,10 @@ async function handleUpload(req, res) {
 
   let accessToken;
   try {
-    accessToken = await getServiceAccountAccessToken();
+    accessToken = await getOwnerAccessToken(sql, tripRow.user_id);
   } catch (err) {
-    console.error("[drive upload] service account auth failed:", err.message);
-    return res.status(500).json({ error: "Photo upload isn't configured yet" });
+    console.error("[drive upload] owner access token failed:", err.message);
+    return res.status(500).json({ error: err.message || "Photo upload isn't set up yet" });
   }
 
   const boundary = `tp${Date.now().toString(36)}${Math.random().toString(36).slice(2)}`;

@@ -526,6 +526,12 @@ export default async function handler(req, res) {
         break;
       }
 
+      // ── Google Drive ──────────────────────────────────────────────────────────
+      case "disconnectGoogleDrive": {
+        await sql`DELETE FROM google_oauth_accounts WHERE user_id = ${user.id}`;
+        break;
+      }
+
       // ── Announcements ─────────────────────────────────────────────────────────
       case "addAnnouncement": {
         const { tripId, announcement: a } = p;
