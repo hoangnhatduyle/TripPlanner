@@ -19,6 +19,7 @@ const fmtBookingTime = v    => window.fmtBookingTime(v);
 const tripDuration  = t     => window.tripDuration(t);
 const showLoginModal = t    => window.showLoginModal(t);
 const renderLightbox = ()   => window.renderLightbox();
+const openCoverLightbox = (fileId) => window.openCoverLightbox(fileId);
 
 
 const TIME_SLOTS_DEFAULT = [
@@ -64,7 +65,7 @@ function newTrip(data) {
     budget: data.budget ? parseFloat(data.budget) : null,
     expenses: [],
     packing: data.useTemplate
-      ? PACKING_TEMPLATE.map(c => ({ id: uid(), name: c.name, items: c.items.map(i => ({ id: uid(), name: i, packed: false })) }))
+      ? PACKING_TEMPLATE.map(c => ({ id: uid(), name: c.name, listType: "packing", items: c.items.map(i => ({ id: uid(), name: i, packed: false })) }))
       : [],
     itinerary: Array.from({ length: days }, (_, i) => ({
       id: uid(),
@@ -181,16 +182,7 @@ function openCoverPhotoLightbox() {
   const t = currentTrip();
   const thumbnailId = t?.driveFolder?.thumbnailId;
   if (!thumbnailId) return;
-  const cached = t?.driveFolder?.folderId ? driveCache.get(t.driveFolder.folderId) : null;
-  if (cached?.files?.length) {
-    const idx = cached.files.findIndex(f => f.id === thumbnailId);
-    lightboxFiles = cached.files;
-    lightboxIdx = idx >= 0 ? idx : 0;
-  } else {
-    lightboxFiles = [{ id: thumbnailId, name: "Cover photo", thumbnailLink: null }];
-    lightboxIdx = 0;
-  }
-  renderLightbox();
+  openCoverLightbox(thumbnailId);
 }
 function removeCoverPhoto() {
   closeAvatarMenu();

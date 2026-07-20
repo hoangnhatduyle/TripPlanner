@@ -101,7 +101,7 @@ export async function loadStateFromDB(sql, userId) {
     });
 
     const packing = (catMap[tr.id] || []).map(c => ({
-      id: c.id, name: c.name,
+      id: c.id, name: c.name, listType: c.list_type || 'packing',
       items: (itemMap[c.id] || []).map(i => ({ id: i.id, name: i.name, packed: i.packed, assignedTo: itemAssigneeMap[i.id] || [] })),
     }));
 
@@ -225,7 +225,7 @@ export async function insertTripRows(sql, userId, trip, order) {
   for (let ci = 0; ci < (trip.packing || []).length; ci++) {
     const cat = trip.packing[ci];
     if (!cat.id) continue;
-    await sql`INSERT INTO packing_categories (id, trip_id, name, pos) VALUES (${cat.id}, ${trip.id}, ${cat.name || ''}, ${ci})`;
+    await sql`INSERT INTO packing_categories (id, trip_id, name, pos, list_type) VALUES (${cat.id}, ${trip.id}, ${cat.name || ''}, ${ci}, ${cat.listType || 'packing'})`;
     for (let ii = 0; ii < (cat.items || []).length; ii++) {
       const item = cat.items[ii];
       if (!item.id) continue;
@@ -427,8 +427,8 @@ export async function updateTripFull(sql, tripId, userId, trip) {
   for (let ci = 0; ci < (trip.packing || []).length; ci++) {
     const cat = trip.packing[ci];
     if (!cat.id) continue;
-    await sql`INSERT INTO packing_categories (id, trip_id, name, pos) VALUES (${cat.id}, ${tripId}, ${cat.name || ''}, ${ci})
-              ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name, pos = EXCLUDED.pos`;
+    await sql`INSERT INTO packing_categories (id, trip_id, name, pos, list_type) VALUES (${cat.id}, ${tripId}, ${cat.name || ''}, ${ci}, ${cat.listType || 'packing'})
+              ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name, pos = EXCLUDED.pos, list_type = EXCLUDED.list_type`;
     const itemIds = (cat.items || []).filter(i => i.id).map(i => i.id);
     for (let ii = 0; ii < (cat.items || []).length; ii++) {
       const item = cat.items[ii];

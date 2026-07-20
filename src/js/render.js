@@ -25,7 +25,7 @@ const renderDocuments = t => window.renderDocuments(t);
 
 const ALL_TABS    = ["overview","itinerary","expenses","packing","reservations","notes","photos","documents"];
 const TAB_LABELS  = { overview:"Overview", itinerary:"Itinerary", expenses:"Expenses",
-                      packing:"Packing", reservations:"Reservations", notes:"Notes", photos:"Photos", documents:"Docs" };
+                      packing:"Preparation", reservations:"Reservations", notes:"Notes", photos:"Photos", documents:"Docs" };
 const NOTE_COLORS = ["#fef9c3","#dcfce7","#dbeafe","#fce7f3","#ffe4e6"];
 
 // -------- RENDER --------
@@ -77,7 +77,7 @@ function buildPrintHtml(t) {
     <h2 style="margin:24px 0 12px;">Expenses</h2>
     ${renderExpenses(t, true)}
     <h2 style="margin:24px 0 12px;">Packing List</h2>
-    ${renderPacking(t)}
+    ${renderPackList(t, 'packing')}
     <h2 style="margin:24px 0 12px;">Reservations</h2>
     ${renderReservations(t, true)}
     ${getNotes(t).length ? `<h2 style="margin:24px 0 12px;">Notes</h2><div class="panel"><div class="sticky-board">${getNotes(t).map((n,i)=>`<div class="sticky-note" style="background:${NOTE_COLORS[i%NOTE_COLORS.length]};pointer-events:none"><div style="font-size:13px;line-height:1.6;white-space:pre-wrap">${escapeHtml(n.text)}</div></div>`).join("")}</div></div>` : ""}
@@ -108,15 +108,19 @@ function getTripHeaderStats(t) {
         .reduce((s, e) => s + (parseFloat(e.cost) || 0), 0)
     : null;
   const reservOpen = (t.reservations || []).filter(r => r.status !== "booked" && r.status !== "cancelled" && r.name?.trim()).length;
-  const packTotal = (t.packing || []).reduce((s, c) => s + c.items.length, 0);
-  const packDone = (t.packing || []).reduce((s, c) => s + c.items.filter(i => i.packed).length, 0);
-  return { totalSpend, myExpensesTotal, reservOpen, packDone, packTotal };
+  const packOnly = (t.packing || []).filter(c => (c.listType || 'packing') === 'packing');
+  const packTotal = packOnly.reduce((s, c) => s + c.items.length, 0);
+  const packDone = packOnly.reduce((s, c) => s + c.items.filter(i => i.packed).length, 0);
+  const todoOnly = (t.packing || []).filter(c => (c.listType || 'packing') === 'todo');
+  const todoTotal = todoOnly.reduce((s, c) => s + c.items.length, 0);
+  const todoDone = todoOnly.reduce((s, c) => s + c.items.filter(i => i.packed).length, 0);
+  return { totalSpend, myExpensesTotal, reservOpen, packDone, packTotal, todoDone, todoTotal };
 }
 
 function updateTripHeaderStats(t) {
   if (!t) t = currentTrip();
   if (!t) return;
-  const { totalSpend, myExpensesTotal, reservOpen, packDone, packTotal } = getTripHeaderStats(t);
+  const { totalSpend, myExpensesTotal, reservOpen, packDone, packTotal, todoDone, todoTotal } = getTripHeaderStats(t);
   const el = (id) => document.getElementById(id);
   const spend = el("stat-total-spend");
   if (spend) spend.textContent = fmtCurrency(totalSpend);
@@ -126,6 +130,8 @@ function updateTripHeaderStats(t) {
   if (packed) packed.textContent = `${packDone}/${packTotal}`;
   const book = el("stat-to-book");
   if (book) book.textContent = String(reservOpen);
+  const todo = el("stat-todo");
+  if (todo) todo.textContent = `${todoDone}/${todoTotal}`;
 }
 
 function renderExpensesPanel() {
@@ -142,7 +148,7 @@ function renderPackingPanel() {
   const t = currentTrip();
   const root = document.getElementById("packing-root");
   if (!t || !root) return false;
-  root.innerHTML = renderPacking(t);
+  root.innerHTML = renderPrepPanel(t);
   root.querySelectorAll("textarea.autogrow:not([data-autogrow-bound])").forEach(autoGrow);
   updateTripHeaderStats(t);
   return true;
@@ -179,7 +185,7 @@ function renderTrip() {
   else cdLabel = `${-dU} days ago`;
 
   const nights = tripDuration(t);
-  const { totalSpend, myExpensesTotal, reservOpen, packDone, packTotal } = getTripHeaderStats(t);
+  const { totalSpend, myExpensesTotal, reservOpen, packDone, packTotal, todoDone, todoTotal } = getTripHeaderStats(t);
   const _myTraveler = getMyTraveler(t.id);
 
   const allowedTabs = window._shareTabs || ALL_TABS;
@@ -255,7 +261,7 @@ function renderTrip() {
         ${allowedTabs.includes("expenses") && _myTraveler ? `<div class="stat"><div class="stat-label">Your expenses</div><div class="stat-value" id="stat-my-expenses">${fmtCurrency(myExpensesTotal)}</div><div style="font-size:11px;color:var(--ink-soft);margin-top:2px;">as ${escapeHtml(_myTraveler)}</div></div>` : ""}
         ${allowedTabs.includes("packing") ? `<div class="stat"><div class="stat-label">Packed</div><div class="stat-value" id="stat-packed">${packDone}/${packTotal}</div></div>` : ""}
         ${allowedTabs.includes("reservations") ? `<div class="stat"><div class="stat-label">To book</div><div class="stat-value" id="stat-to-book">${reservOpen}</div></div>` : ""}
-        ${(() => { const tasks = t.tasks || []; const done = tasks.filter(tk => tk.status === 'done').length; return tasks.length ? `<div class="stat"><div class="stat-label">Tasks</div><div class="stat-value" id="stat-tasks">${done}/${tasks.length}</div></div>` : ""; })()}
+        ${allowedTabs.includes("packing") && todoTotal ? `<div class="stat"><div class="stat-label">To-Do</div><div class="stat-value" id="stat-todo">${todoDone}/${todoTotal}</div></div>` : ""}
         ${t.timezone ? `<div class="stat" id="tz-stat"><div class="stat-label">Local time</div><div class="stat-value" id="tz-clock">—</div></div>` : ""}
       </div>
     </div>
@@ -264,7 +270,7 @@ function renderTrip() {
       ${allowedTabs.includes("overview") ? tabBtn("overview", "Overview", svgIcon("home")) : ""}
       ${allowedTabs.includes("itinerary") ? tabBtn("itinerary", "Itinerary", svgIcon("calendar")) : ""}
       ${allowedTabs.includes("expenses") ? tabBtn("expenses", "Expenses", svgIcon("dollar")) : ""}
-      ${allowedTabs.includes("packing") ? tabBtn("packing", "Packing", svgIcon("luggage")) : ""}
+      ${allowedTabs.includes("packing") ? tabBtn("packing", "Preparation", svgIcon("luggage")) : ""}
       ${allowedTabs.includes("reservations") ? tabBtn("reservations", "Reservations", svgIcon("bookmark")) : ""}
       ${allowedTabs.includes("notes") ? tabBtn("notes", "Notes", svgIcon("edit")) : ""}
       ${allowedTabs.includes("photos") ? tabBtn("photos", "Photos", svgIcon("camera")) : ""}
@@ -274,7 +280,7 @@ function renderTrip() {
     ${tab === "overview" ? renderOverview(t) : ""}
     ${tab === "itinerary" ? renderItinerary(t) : ""}
     ${tab === "expenses" ? `<div id="expenses-root">${renderExpenses(t)}</div>` : ""}
-    ${tab === "packing" ? `<div id="packing-root">${renderPacking(t)}</div>` : ""}
+    ${tab === "packing" ? `<div id="packing-root">${renderPrepPanel(t)}</div>` : ""}
     ${tab === "reservations" ? `<div id="reservations-root">${renderReservations(t)}</div>` : ""}
     ${tab === "notes" ? renderNotes(t) : ""}
     ${tab === "photos" ? renderPhotos(t) : ""}
@@ -299,7 +305,8 @@ function svgIcon(name) {
     qr:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="5" y="5" width="3" height="3" fill="currentColor" stroke="none"/><rect x="16" y="5" width="3" height="3" fill="currentColor" stroke="none"/><rect x="5" y="16" width="3" height="3" fill="currentColor" stroke="none"/><path d="M14 14h3v3"/><path d="M17 17h4"/><path d="M17 21v-4"/><path d="M14 17v4"/></svg>',
     sparkle:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l1.5 5.5L19 10l-5.5 1.5L12 17l-1.5-5.5L5 10l5.5-1.5L12 3z"/><path d="M5 3l.75 2.75L8.5 7l-2.75.75L5 10.5l-.75-2.75L1.5 7l2.75-.75L5 3z" opacity=".5"/><path d="M19 14l.75 2.75L22.5 18l-2.75.75L19 21.5l-.75-2.75L15.5 18l2.75-.75L19 14z" opacity=".5"/></svg>',
     image:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>',
-    lock:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>'
+    lock:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>',
+    play:'<svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M8 5v14l11-7z"/></svg>'
   };
   return icons[name] || "";
 }
