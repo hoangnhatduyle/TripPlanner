@@ -20,7 +20,6 @@ const fmtBookingTime = v    => window.fmtBookingTime(v);
 const tripDuration  = t     => window.tripDuration(t);
 const showLoginModal = t    => window.showLoginModal(t);
 const isLoggedIn  = () => window.isLoggedIn();
-const getToken    = () => window.getToken();
 
 
 const THEMES = [
@@ -74,19 +73,6 @@ function openSettings() {
 
         ${isLoggedIn() ? `
         <div class="field">
-          <label>Google Drive</label>
-          ${state.settings.googleDriveEmail ? `
-            <div class="row" style="align-items:center;gap:8px;">
-              <span class="hint" style="margin:0;">Connected as <strong>${escapeHtml(state.settings.googleDriveEmail)}</strong></span>
-              <button class="btn sm ghost" style="color:#c0392b;" onclick="disconnectGoogleDrive()">Disconnect</button>
-            </div>
-          ` : `
-            <button class="btn" onclick="connectGoogleDrive()">🔗 Connect Google Drive</button>
-            <div class="hint" style="margin-top:8px;">Needed for the "Add Photos" upload feature — lets photos added from the app get saved into your linked Drive folders.</div>
-          `}
-        </div>
-
-        <div class="field">
           <label>Data</label>
           <div class="row">
             <button class="btn" onclick="exportJson()">⬇ Export all to JSON</button>
@@ -134,23 +120,6 @@ function pickTheme(id) {
   document.querySelectorAll(`.theme-swatch[onclick*="${id}"]`).forEach(s => s.classList.add("sel"));
 }
 function updateCurrency(c) { if (!guardEdit()) return; state.settings.currency = c; mutate({ type: 'updateSettings', currency: c }); render(); }
-async function connectGoogleDrive() {
-  try {
-    const res = await fetch('/api/drive?action=oauth-start', { method: 'POST', headers: { Authorization: `Bearer ${getToken()}` } });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Failed to start Google connection');
-    window.location.href = data.authUrl;
-  } catch (e) {
-    showModal({ title: 'Error', size: 'sm', body: `<p>${escapeHtml(e.message)}</p>`, actions: [{ label: 'OK', onClick: closeModal }] });
-  }
-}
-function disconnectGoogleDrive() {
-  if (!confirm('Disconnect Google Drive? Photo uploads from the app will stop working until you reconnect.')) return;
-  mutate({ type: 'disconnectGoogleDrive' });
-  state.settings.googleDriveEmail = null;
-  closeModal();
-  openSettings();
-}
 function exportJson() {
   const payload = { version: 1, exportedAt: new Date().toISOString(), ...state };
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
@@ -216,6 +185,5 @@ function resetAll() {
 
 Object.assign(window, {
   openSettings, hardRefresh, pickTheme, updateCurrency, exportJson, importJson, resetAll,
-  connectGoogleDrive, disconnectGoogleDrive,
 });
 

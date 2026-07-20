@@ -52,27 +52,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     updateHeaderUI();
     setState(await loadState());
     window.render();
-
-    // Handle the redirect back from Google's OAuth consent screen (see Settings → Google Drive).
-    const params = new URLSearchParams(location.search);
-    const googleStatus = params.get("google");
-    if (googleStatus) {
-      const msg = params.get("msg");
-      history.replaceState({}, "", location.pathname);
-      if (googleStatus === "connected") {
-        window.showModal({
-          title: "Google Drive connected", size: "sm",
-          body: "<p>You can now add photos directly from the app's Photos tab.</p>",
-          actions: [{ label: "OK", onClick: window.closeModal }],
-        });
-      } else {
-        window.showModal({
-          title: "Connection failed", size: "sm",
-          body: `<p>${window.escapeHtml(msg || "Something went wrong connecting Google Drive.")}</p>`,
-          actions: [{ label: "OK", onClick: window.closeModal }],
-        });
-      }
-    }
   } else {
     window.showLoginModal();
   }
