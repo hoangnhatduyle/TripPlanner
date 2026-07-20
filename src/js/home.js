@@ -220,12 +220,12 @@ function loadMoreUpcoming() {
 function getFileThumbUrl(f, size = 400) {
   return f.thumbnailLink
     ? f.thumbnailLink.replace(/=s\d+$/, `=s${size}`)
-    : `/api/drive/thumb?fileId=${encodeURIComponent(f.id)}&sz=${size}`;
+    : `/api/drive?action=thumb&fileId=${encodeURIComponent(f.id)}&sz=${size}`;
 }
 
 function getTripThumbnailUrl(t) {
   const { thumbnailId } = t.driveFolder || {};
-  return thumbnailId ? `/api/drive/thumb?fileId=${encodeURIComponent(thumbnailId)}` : null;
+  return thumbnailId ? `/api/drive?action=thumb&fileId=${encodeURIComponent(thumbnailId)}` : null;
 }
 
 function renderTripCard(t) {

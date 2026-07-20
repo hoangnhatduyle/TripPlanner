@@ -273,7 +273,7 @@ function generateTripCard(t) {
     img.crossOrigin = "anonymous";
     img.onload = () => { canvas._thumbImg = img; drawCard(); const p = document.getElementById("hc-preview"); if (p) p.src = canvas.toDataURL("image/png"); };
     img.onerror = () => { /* proxy failed, draw without photo */ drawCard(); };
-    img.src = `/api/drive/thumb?fileId=${encodeURIComponent(t.driveFolder.thumbnailId)}&sz=600`;
+    img.src = `/api/drive?action=thumb&fileId=${encodeURIComponent(t.driveFolder.thumbnailId)}&sz=600`;
   }
 
   return canvas;
