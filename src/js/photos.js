@@ -123,7 +123,7 @@ async function fetchDrivePhotos(folderId, forceRefresh = false) {
   driveCache.set(folderId, { files: cached?.files || [], fetchedAt: cached?.fetchedAt || 0, loading: true });
   if (route.view === "trip" && route.tab === "photos") render();
   try {
-    const res = await fetch(`/api/drive/folder?folderId=${encodeURIComponent(folderId)}`);
+    const res = await fetch(`/api/drive?action=folder&folderId=${encodeURIComponent(folderId)}`);
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || "Failed to load photos");
     driveCache.set(folderId, { files: data.files || [], fetchedAt: Date.now() });
@@ -218,7 +218,7 @@ async function uploadSinglePhoto(file, folderId) {
   } else {
     headers.Authorization = `Bearer ${getToken()}`;
   }
-  const res = await fetch("/api/drive/upload", { method: "POST", headers, body: formData });
+  const res = await fetch("/api/drive", { method: "POST", headers, body: formData });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
     throw new Error(err.error || "Upload failed");
